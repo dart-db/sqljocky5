@@ -146,7 +146,7 @@ class HandshakeHandler extends Handler {
               CharacterSet.UTF8,
               new AuthHandler(_user, _password, _db, scrambleBuffer,
                   clientFlags, _maxPacketSize, CharacterSet.UTF8,
-                  ssl: true)));
+                  )));
     }
 
     return new HandlerResponse(
