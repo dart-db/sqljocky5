@@ -282,8 +282,8 @@ class Connection {
       _headerBuffer[1] = (buffer.length & 0xFF00) >> 8;
       _headerBuffer[2] = (buffer.length & 0xFF0000) >> 16;
       _headerBuffer[3] = ++_packetNumber;
-      var encodedHeader = ZLIB.encode(_headerBuffer.list);
-      var encodedBuffer = ZLIB.encode(buffer.list);
+      var encodedHeader = zlib.encode(_headerBuffer.list);
+      var encodedBuffer = zlib.encode(buffer.list);
       _compressedHeaderBuffer
           .writeUint24(encodedHeader.length + encodedBuffer.length);
       _compressedHeaderBuffer.writeByte(++_compressedPacketNumber);

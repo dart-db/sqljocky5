@@ -221,6 +221,7 @@ class ConnectionPoolImpl extends Object
     } catch (e) {
       releaseReuseThrow(cnx, e);
     }
+    return null;
   }
 
   /**
@@ -329,6 +330,7 @@ class ConnectionPoolImpl extends Object
     } catch (e) {
       releaseReuseThrow(cnx, e);
     }
+    return null;
   }
 
   /**
