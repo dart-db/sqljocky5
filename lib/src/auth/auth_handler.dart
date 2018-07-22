@@ -17,7 +17,6 @@ class AuthHandler extends Handler {
   final int clientFlags;
   final int maxPacketSize;
   final int characterSet;
-  final bool _ssl;
 
   AuthHandler(
       String this.username,
@@ -27,9 +26,7 @@ class AuthHandler extends Handler {
       int this.clientFlags,
       int this.maxPacketSize,
       int this.characterSet,
-      {bool ssl: false})
-      : this._ssl = false,
-        super(new Logger("AuthHandler"));
+      ) : super(new Logger("AuthHandler"));
 
   List<int> getHash() {
     List<int> hash;
