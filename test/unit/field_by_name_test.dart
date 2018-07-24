@@ -49,7 +49,7 @@ void main() {
       fieldIndex[new Symbol("three")] = 2;
       var values = [5, "hello", null];
 
-      Row row = new StandardDataPacket.forTests(values, fieldIndex);
+      dynamic row = new StandardDataPacket.forTests(values, fieldIndex);
       expect(row.one, equals(5));
       expect(row.two, equals("hello"));
       expect(row.three, equals(null));
@@ -59,7 +59,7 @@ void main() {
       var fieldIndex = new Map<Symbol, int>();
       var values = [];
 
-      Row row = new StandardDataPacket.forTests(values, fieldIndex);
+      dynamic row = new StandardDataPacket.forTests(values, fieldIndex);
 
       expect(() => print(row.one), throwsNoSuchMethodError);
     });
@@ -103,7 +103,7 @@ void main() {
       fieldIndex[new Symbol("three")] = 2;
       var values = [5, "hello", null];
 
-      Row row = new BinaryDataPacket.forTests(values, fieldIndex);
+      dynamic row = new BinaryDataPacket.forTests(values, fieldIndex);
       expect(row.one, equals(5));
       expect(row.two, equals("hello"));
       expect(row.three, equals(null));
@@ -113,7 +113,7 @@ void main() {
       var fieldIndex = new Map<Symbol, int>();
       var values = [];
 
-      Row row = new BinaryDataPacket.forTests(values, fieldIndex);
+      dynamic row = new BinaryDataPacket.forTests(values, fieldIndex);
 
       expect(() => print(row.one), throwsNoSuchMethodError);
     });

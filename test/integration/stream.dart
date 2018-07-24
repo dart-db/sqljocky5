@@ -23,7 +23,7 @@ void runStreamTests(
     });
 
     test('select from stream using query and listen', () async {
-      var futures = [];
+      List<Future> futures = [];
       for (var i = 0; i < 5; i++) {
         var c = new Completer();
         var results = await pool.query('select * from stream');
@@ -36,7 +36,7 @@ void runStreamTests(
     });
 
     test('select nothing from stream using query and listen', () async {
-      var futures = [];
+      List<Future> futures = [];
       for (var i = 0; i < 5; i++) {
         var c = new Completer();
         var results = await pool.query('select * from stream where id=5');
@@ -63,7 +63,7 @@ void runStreamTests(
     });
 
     test('select from stream using prepare and listen', () async {
-      var futures = [];
+      List<Future> futures = [];
       for (var i = 0; i < 5; i++) {
         var c = new Completer();
         var query = await pool.prepare('select * from stream');
@@ -77,7 +77,7 @@ void runStreamTests(
     });
 
     test('select nothing from stream using prepare and listen', () async {
-      var futures = [];
+      List<Future> futures = [];
       for (var i = 0; i < 5; i++) {
         var c = new Completer();
         var query = await pool.prepare('select * from stream where id=5');
