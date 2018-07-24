@@ -121,6 +121,7 @@ class QueryImpl extends Object with ConnectionHelpers implements Query {
     } catch (e) {
       releaseReuseThrow(preparedQuery.cnx, e);
     }
+    return null;
   }
 
   /**
