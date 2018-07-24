@@ -28,7 +28,7 @@ void runErrorTests(
     });
 
     test('select from stream using query and listen', () {
-      var futures = [];
+      List<Future> futures = [];
       for (var i = 0; i < 1; i++) {
         var c = new Completer();
         pool.query('squiggle').then((Results results) {

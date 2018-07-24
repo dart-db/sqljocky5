@@ -255,9 +255,9 @@ void main() {
         "insert into test1 (aint, atext) values (12345, \"ABC\u0000DEF\")");
     expect(1, equals(1)); // put some real expectations here
     results = await pool.query("select atext from test1 where aint = 12345");
-    results = await results.toList();
-    expect(results.length, equals(1));
-    values = results[0];
+    var resultlist = await results.toList();
+    expect(resultlist.length, equals(1));
+    values = resultlist[0];
     expect(values[0].toString(), equals("ABC\u0000DEF"));
 
     results = await pool.query("delete from test1 where aint = 12345");
@@ -268,9 +268,9 @@ void main() {
     expect(1, equals(1)); // put some real expectations here
     results = await pool
         .prepareExecute("select atext from test1 where aint = 12345", []);
-    results = await results.toList();
-    expect(results.length, equals(1));
-    values = results[0];
+    resultlist = await results.toList();
+    expect(resultlist.length, equals(1));
+    values = resultlist[0];
     expect(values[0].toString(), equals("ABC\u0000DEF"));
   });
 }

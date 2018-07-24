@@ -33,13 +33,14 @@ void main() {
   });
 
   test('select from stream using query and listen', () async {
-    var futures = [];
+    List<Future> futures = [];
     for (var i = 0; i < 5; i++) {
       var c = new Completer();
       var results = await pool.query('select * from $tableName');
       results.listen((row) {
-        expect(row.id, equals(0));
-        expect(row.name.toString(), equals("Bob"));
+        dynamic r = row;
+        expect(r.id, equals(0));
+        expect(r.name.toString(), equals("Bob"));
         // length is a getter on List, so it isn't mapped to the result field
         expect(row.length, equals(4));
       }, onDone: () {
@@ -51,14 +52,15 @@ void main() {
   });
 
   test('select from stream using prepareExecute and listen', () async {
-    var futures = [];
+    List<Future> futures = [];
     for (var i = 0; i < 5; i++) {
       var c = new Completer();
       var results = await pool
           .prepareExecute('select * from $tableName where id = ?', [0]);
       results.listen((row) {
-        expect(row.id, equals(0));
-        expect(row.name.toString(), equals("Bob"));
+        dynamic r = row;
+        expect(r.id, equals(0));
+        expect(r.name.toString(), equals("Bob"));
         // length is a getter on List, so it isn't mapped to the result field
         expect(row.length, equals(4));
       }, onDone: () {
