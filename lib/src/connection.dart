@@ -109,6 +109,7 @@ class Connection {
       String user,
       String password,
       String db,
+      int characterSet,
       bool useCompression,
       bool useSSL}) async {
     if (socket != null) {
@@ -117,7 +118,7 @@ class Connection {
     }
 
     _handler = new HandshakeHandler(
-        user, password, _maxPacketSize, db, useCompression, useSSL);
+        user, password, _maxPacketSize, db, characterSet, useCompression, useSSL);
 
     _completer = new Completer();
     log.fine("opening connection to $host:$port/$db");
