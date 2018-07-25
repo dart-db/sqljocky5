@@ -30,6 +30,7 @@ abstract class ConnectionPool implements QueriableConnection {
       String user,
       String password,
       String db,
+      int characterSet,
       int max,
       int maxPacketSize,
       bool useSSL}) = ConnectionPoolImpl;

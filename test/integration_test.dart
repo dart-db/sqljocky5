@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'test_util.dart';
 
 part 'integration/charset.dart';
+part 'integration/charset4.dart';
 part 'integration/errors.dart';
 part 'integration/execute_multi.dart';
 part 'integration/largeblob.dart';
@@ -47,6 +48,7 @@ void main() {
   runPreparedQueryTests(user, password, db, port, host);
   runIntTests2(user, password, db, port, host);
   runCharsetTests(user, password, db, port, host);
+  runCharset4Tests(user, password, db, port, host);
   runNullMapTests(user, password, db, port, host);
   runNumberTests(user, password, db, port, host);
   runStreamTests(user, password, db, port, host);

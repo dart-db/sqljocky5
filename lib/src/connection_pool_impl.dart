@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:logging/logging.dart';
+import 'package:sqljocky5/src/auth/character_set.dart';
 
 import 'connection.dart';
 import 'connection_helpers.dart';
@@ -35,6 +36,7 @@ class ConnectionPoolImpl extends Object
   final String _user;
   final String _password;
   final String _db;
+  final int _characterSet;
   final bool _useCompression = false;
   final bool _useSSL;
   final int _maxPacketSize;
@@ -60,6 +62,7 @@ class ConnectionPoolImpl extends Object
       String user,
       String password,
       String db,
+      int characterSet = CharacterSet.UTF8MB4,
       int max: 5,
       int maxPacketSize: 16 * 1024 * 1024,
       bool useSSL: false})
@@ -71,6 +74,7 @@ class ConnectionPoolImpl extends Object
         _user = user,
         _password = password,
         _db = db,
+        _characterSet = characterSet,
         _maxPacketSize = maxPacketSize,
         _max = max,
         _useSSL = useSSL,
@@ -114,6 +118,7 @@ class ConnectionPoolImpl extends Object
           user: _user,
           password: _password,
           db: _db,
+          characterSet: _characterSet,
           useCompression: _useCompression,
           useSSL: _useSSL);
       cnx.autoRelease = true;
