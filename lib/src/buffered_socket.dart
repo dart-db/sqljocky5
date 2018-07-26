@@ -60,7 +60,7 @@ class BufferedSocket {
     }
   }
 
-  static defaultSocketFactory(host, port) => RawSocket.connect(host, port);
+  static Future<RawSocket> defaultSocketFactory(host, int port) => RawSocket.connect(host, port);
 
   static Future<BufferedSocket> connect(
     String host,
