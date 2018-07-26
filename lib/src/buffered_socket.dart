@@ -38,6 +38,8 @@ class BufferedSocket {
   StreamSubscription _subscription;
   bool _closed = false;
 
+  bool get closed => _closed;
+
   BufferedSocket._(
       this._socket, this.onDataReady, this.onDone, this.onError, this.onClosed)
       : log = new Logger("BufferedSocket") {
@@ -58,34 +60,29 @@ class BufferedSocket {
     }
   }
 
-  static Future<RawSocket> defaultSocketFactory(host, int port) => RawSocket.connect(host, port);
+  static defaultSocketFactory(host, port) => RawSocket.connect(host, port);
 
-  static Future<BufferedSocket> connect(String host, int port,
-      {DataReadyHandler onDataReady,
-      DoneHandler onDone,
-      ErrorHandler onError,
-      ClosedHandler onClosed,
-      SocketFactory socketFactory: defaultSocketFactory,
-      OnConnection onConnection}) async {
-    try {
-      var socket;
-      socket = await socketFactory(host, port);
-      socket.setOption(SocketOption.tcpNoDelay, true);
-
-      var bufferedSocket =
-          new BufferedSocket._(socket, onDataReady, onDone, onError, onClosed);
-      if (onConnection != null) {
-        onConnection(bufferedSocket);
-      }
-      return bufferedSocket;
-    } catch (e) {
-      onError(e);
-    }
-    return null;
+  static Future<BufferedSocket> connect(
+    String host,
+    int port, {
+    DataReadyHandler onDataReady,
+    DoneHandler onDone,
+    ErrorHandler onError,
+    ClosedHandler onClosed,
+    SocketFactory socketFactory: defaultSocketFactory,
+  }) async {
+    var socket;
+    socket = await socketFactory(host, port);
+    socket.setOption(SocketOption.TCP_NODELAY, true);
+    return new BufferedSocket._(socket, onDataReady, onDone, onError, onClosed);
   }
 
   void _onData(RawSocketEvent event) {
-    if (event == RawSocketEvent.read) {
+    if (_closed) {
+      return;
+    }
+
+    if (event == RawSocketEvent.READ) {
       log.fine("READ data");
       if (_readingBuffer == null) {
         log.fine("READ data: no buffer");
@@ -95,14 +92,14 @@ class BufferedSocket {
       } else {
         _readBuffer();
       }
-    } else if (event == RawSocketEvent.readClosed) {
+    } else if (event == RawSocketEvent.READ_CLOSED) {
       log.fine("READ_CLOSED");
       if (this.onClosed != null) {
         this.onClosed();
       }
-    } else if (event == RawSocketEvent.closed) {
+    } else if (event == RawSocketEvent.CLOSED) {
       log.fine("CLOSED");
-    } else if (event == RawSocketEvent.write) {
+    } else if (event == RawSocketEvent.WRITE) {
       log.fine("WRITE data");
       if (_writingBuffer != null) {
         _writeBuffer();
@@ -206,7 +203,7 @@ class BufferedSocket {
         subscription: _subscription, onBadCertificate: (cert) => true);
     log.fine("Socket is secure");
     _socket = socket;
-    _socket.setOption(SocketOption.tcpNoDelay, true);
+    _socket.setOption(SocketOption.TCP_NODELAY, true);
     _subscription = _socket.listen(_onData,
         onError: _onSocketError, onDone: _onSocketDone, cancelOnError: true);
     _socket.writeEventsEnabled = true;

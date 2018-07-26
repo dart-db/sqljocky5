@@ -8,7 +8,6 @@ import '../buffer.dart';
 import '../handlers/handler.dart';
 import '../mysql_client_error.dart';
 import '../../constants.dart';
-import 'character_set.dart';
 import 'ssl_handler.dart';
 import 'auth_handler.dart';
 
@@ -33,9 +32,9 @@ class HandshakeHandler extends Handler {
   bool useCompression = false;
   bool useSSL = false;
 
-  HandshakeHandler(
-      String this._user, String this._password, int this._maxPacketSize,
-      [String db, int this._characterSet = CharacterSet.UTF8MB4, bool useCompression, bool useSSL])
+  HandshakeHandler(String this._user, String this._password,
+      int this._maxPacketSize, int this._characterSet,
+      [String db, bool useCompression, bool useSSL])
       : _db = db,
         this.useCompression = useCompression,
         this.useSSL = useSSL,
@@ -101,6 +100,8 @@ class HandshakeHandler extends Handler {
    * exception is thrown.
    */
   HandlerResponse processResponse(Buffer response) {
+    checkResponse(response);
+
     readResponseBuffer(response);
 
     if ((serverCapabilities & CLIENT_PROTOCOL_41) == 0) {
@@ -145,9 +146,15 @@ class HandshakeHandler extends Handler {
               clientFlags,
               _maxPacketSize,
               _characterSet,
-              new AuthHandler(_user, _password, _db, scrambleBuffer,
-                  clientFlags, _maxPacketSize, _characterSet,
-                  )));
+              new AuthHandler(
+                _user,
+                _password,
+                _db,
+                scrambleBuffer,
+                clientFlags,
+                _maxPacketSize,
+                _characterSet,
+              )));
     }
 
     return new HandlerResponse(

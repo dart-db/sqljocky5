@@ -6,30 +6,36 @@ import 'package:test/test.dart';
 
 import 'test_util.dart';
 
-ConnectionPool get pool => _pool;
-ConnectionPool _pool;
+MySqlConnection get conn => _conn;
+MySqlConnection _conn;
 
-void initializeTest([String tableName, String createSql]) {
+void initializeTest([String tableName, String createSql, String insertSql]) {
   var options = new OptionsFile('connection.options');
-  var user = options.getString('user');
-  var password = options.getString('password', null);
-  var port = options.getInt('port', 3306);
-  var db = options.getString('db');
-  var host = options.getString('host', 'localhost');
+
+  ConnectionSettings s = new ConnectionSettings(
+    user: options.getString('user'),
+    password: options.getString('password', null),
+    port: options.getInt('port', 3306),
+    db: options.getString('db'),
+    host: options.getString('host', 'localhost'),
+  );
 
   setUp(() async {
-    _pool = new ConnectionPool(
-        user: user, password: password, db: db, port: port, host: host, max: 1);
+    // Ensure db exists
+    ConnectionSettings checkSettings = new ConnectionSettings.copy(s);
+    checkSettings.db = null;
+    final c = await MySqlConnection.connect(checkSettings);
+    await c.query("CREATE DATABASE IF NOT EXISTS ${s.db} CHARACTER SET utf8");
+    await c.close();
+
+    _conn = await MySqlConnection.connect(s);
 
     if (tableName != null) {
-      await setup(pool, tableName, createSql);
+      await setup(_conn, tableName, createSql, insertSql);
     }
   });
 
-  tearDown(() {
-    if (_pool != null) {
-      _pool.closeConnectionsNow();
-      _pool = null;
-    }
+  tearDown(() async {
+    await _conn?.close();
   });
 }
