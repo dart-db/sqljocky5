@@ -10,9 +10,7 @@ import 'package:test/test.dart';
 import 'test_util.dart';
 
 part 'integration/charset.dart';
-part 'integration/charset4.dart';
 part 'integration/errors.dart';
-part 'integration/execute_multi.dart';
 part 'integration/largeblob.dart';
 part 'integration/nullmap.dart';
 part 'integration/numbers.dart';
@@ -45,16 +43,14 @@ void main() {
   var db = options.getString('db');
   var host = options.getString('host', 'localhost');
 
-  runPreparedQueryTests(user, password, db, port, host);
-  runIntTests2(user, password, db, port, host);
+//  runPreparedQueryTests(user, password, db, port, host);
+//  runIntTests2(user, password, db, port, host);
   runCharsetTests(user, password, db, port, host);
-  runCharset4Tests(user, password, db, port, host);
-  runNullMapTests(user, password, db, port, host);
-  runNumberTests(user, password, db, port, host);
-  runStreamTests(user, password, db, port, host);
-  runErrorTests(user, password, db, port, host);
+//  runNullMapTests(user, password, db, port, host);
+//  runNumberTests(user, password, db, port, host);
+//  runStreamTests(user, password, db, port, host);
+//  runErrorTests(user, password, db, port, host);
 //  runStoredProcedureTests(user, password, db, port, host);
-  runExecuteMultiTests(user, password, db, port, host);
 //  if (results['large_packets'] == 'true') {
 //    runLargeBlobTests(user, password, db, port, host);
 //  }
