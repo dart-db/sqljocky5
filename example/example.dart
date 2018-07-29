@@ -2,52 +2,40 @@ import 'package:sqljocky5/sqljocky.dart';
 import 'package:options_file/options_file.dart';
 import 'dart:async';
 
-/*
- * This example drops a couple of tables if they exist, before recreating them.
- * It then stores some data in the database and reads it back out.
- * You must have a connection.options file in order for this to connect.
- */
+/// Drops the tables if they already exist
+Future<void> dropTables(MySqlConnection conn) async {
+  print("Dropping tables ...");
+  await conn.query("DROP TABLE IF EXISTS pets, people");
+  print("Dropped tables!");
+}
 
+Future<void> createTables(MySqlConnection conn) async {
+  print("Creating tables ...");
+
+  await conn.query('CREATE TABLE people (id INTEGER NOT NULL auto_increment, '
+      'name VARCHAR(255), '
+      'age INTEGER, '
+      'PRIMARY KEY (id))');
+  await conn.query('CREATE TABLE pets (id INTEGER NOT NULL auto_increment, '
+      'name VARCHAR(255), '
+      'species TEXT, '
+      'owner_id INTEGER, '
+      'PRIMARY KEY (id),'
+      'FOREIGN KEY (owner_id) REFERENCES people (id))');
+  print("Created table!");
+}
+
+/*
 class Example {
   ConnectionPool pool;
 
   Example(this.pool);
 
   Future run() async {
-    // drop the tables if they already exist
-    await dropTables();
-    print("dropped tables");
-    // then recreate the tables
-    await createTables();
-    print("created tables");
     // add some data
     await addData();
     // and read it back out
     await readData();
-  }
-
-  Future dropTables() {
-    print("dropping tables");
-    var dropper = new TableDropper(pool, ['pets', 'people']);
-    return dropper.dropTables();
-  }
-
-  Future createTables() {
-    print("creating tables");
-    var querier = new QueryRunner(pool, [
-      'create table people (id integer not null auto_increment, '
-          'name varchar(255), '
-          'age integer, '
-          'primary key (id))',
-      'create table pets (id integer not null auto_increment, '
-          'name varchar(255), '
-          'species text, '
-          'owner_id integer, '
-          'primary key (id),'
-          'foreign key (owner_id) references people (id))'
-    ]);
-    print("executing queries");
-    return querier.executeQueries();
   }
 
   Future addData() async {
@@ -94,26 +82,26 @@ class Example {
     });
   }
 }
+*/
 
 main() async {
-  OptionsFile options = new OptionsFile('connection.options');
-  String user = options.getString('user');
-  String password = options.getString('password');
-  int port = options.getInt('port', 3306);
-  String db = options.getString('db');
-  String host = options.getString('host', 'localhost');
+  var options = OptionsFile('connection.options');
+
+  var s = ConnectionSettings(
+    user: options.getString('user'),
+    password: options.getString('password', null),
+    port: options.getInt('port', 3306),
+    db: options.getString('db'),
+    host: options.getString('host', 'localhost'),
+  );
 
   // create a connection
-  print("opening connection");
-  var pool = new ConnectionPool(
-      host: host, port: port, user: user, password: password, db: db, max: 1);
-  print("connection open");
-  // create an example class
-  var example = new Example(pool);
-  // run the example
-  print("running example");
-  await example.run();
-  // finally, close the connection
-  print("K THNX BYE!");
-  pool.closeConnectionsNow();
+  print("Opening connection ...");
+  var conn = await MySqlConnection.connect(s);
+  print("Opened connection!");
+
+  await dropTables(conn);
+  await createTables(conn);
+
+  await conn.close();
 }
