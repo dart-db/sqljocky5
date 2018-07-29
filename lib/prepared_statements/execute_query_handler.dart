@@ -16,31 +16,28 @@ import 'prepared_query.dart';
 import '../results/results.dart';
 import '../results/field.dart';
 import '../results/row.dart';
-import '../query/result_set_header_packet.dart';
 import 'package:sqljocky5/results/blob.dart';
 import 'package:sqljocky5/utils/buffer.dart';
 
-class ExecuteQueryHandler extends Handler {
-  static const int STATE_HEADER_PACKET = 0;
-  static const int STATE_FIELD_PACKETS = 1;
-  static const int STATE_ROW_PACKETS = 2;
+class ExecuteQueryHandler extends HandlerWithResult {
+  final PreparedQuery preparedQuery;
+  final List _values;
 
   int _state = STATE_HEADER_PACKET;
 
-  ResultSetHeaderPacket _resultSetHeaderPacket;
   List<Field> fieldPackets;
   Map<String, int> _fieldIndex;
   StreamController<Row> _streamController;
 
-  final PreparedQuery _preparedQuery;
-  final List _values;
   List preparedValues;
   OkPacket _okPacket;
   bool _executed;
   bool _cancelled = false;
 
+  final _resultsCompleter = Completer<StreamedResults>();
+
   ExecuteQueryHandler(
-      PreparedQuery this._preparedQuery, bool this._executed, List this._values)
+      this.preparedQuery, bool this._executed, List this._values)
       : super(new Logger("ExecuteQueryHandler")) {
     fieldPackets = <Field>[];
   }
@@ -199,22 +196,15 @@ class ExecuteQueryHandler extends Handler {
     buffer.byte = value.second;
   }
 
-  _prepareBool(value) {
-    return value;
-  }
+  bool _prepareBool(bool value) => value;
 
-  int _measureBool(value, preparedValue) {
-    return 1;
-  }
+  int _measureBool(value, preparedValue) => 1;
 
-  _writeBool(value, preparedValue, FixedWriteBuffer buffer) {
-    log.fine("BOOL: $value");
+  void _writeBool(value, preparedValue, FixedWriteBuffer buffer) {
     buffer.byte = value ? 1 : 0;
   }
 
-  _prepareList(value) {
-    return value;
-  }
+  List<int> _prepareList(List<int> value) => value;
 
   int _measureList(value, preparedValue) {
     return measureLengthCodedBinary(value.length) + value.length;
@@ -225,9 +215,7 @@ class ExecuteQueryHandler extends Handler {
     buffer.writeList(value);
   }
 
-  _prepareBlob(value) {
-    return (value as Blob).toBytes();
-  }
+  List<int> _prepareBlob(Blob value) => value.toBytes();
 
   int _measureBlob(value, preparedValue) {
     return measureLengthCodedBinary(preparedValue.length) +
@@ -278,7 +266,7 @@ class ExecuteQueryHandler extends Handler {
     var buffer =
         new FixedWriteBuffer(10 + nullMap.length + 1 + types.length + length);
     buffer.byte = COM_STMT_EXECUTE;
-    buffer.uint32 = _preparedQuery.statementHandlerId;
+    buffer.uint32 = preparedQuery.statementHandlerId;
     buffer.byte = 0;
     buffer.uint32 = 1;
     buffer.writeList(nullMap);
@@ -327,51 +315,46 @@ class ExecuteQueryHandler extends Handler {
     } else if (packet is OkPacket) {
       _okPacket = packet;
       if ((packet.serverStatus & SERVER_MORE_RESULTS_EXISTS) == 0) {
-        return new HandlerResponse(
-            finished: true,
-            result: new ResultsStream(
-                _okPacket.insertId, _okPacket.affectedRows, null));
+        var stream =
+            new StreamedResults(_okPacket.insertId, _okPacket.affectedRows, null);
+        _resultsCompleter.complete(stream);
+        return new HandlerResponse(finished: true, result: stream);
       }
     }
     return HandlerResponse.notFinished;
   }
 
-  _handleEndOfFields() {
+  HandlerResponse _handleEndOfFields() {
     _state = STATE_ROW_PACKETS;
     _streamController = new StreamController<Row>();
     _streamController.onCancel = () {
       _cancelled = true;
     };
     this._fieldIndex = createFieldIndex();
-    return new HandlerResponse(
-        result: new ResultsStream(null, null, fieldPackets,
-            stream: _streamController.stream));
+    var stream = new StreamedResults(null, null, fieldPackets,
+        stream: _streamController.stream);
+    _resultsCompleter.complete(stream);
+    return new HandlerResponse(result: stream);
   }
 
-  _handleEndOfRows() {
+  HandlerResponse _handleEndOfRows() {
     _streamController.close();
     return new HandlerResponse(finished: true);
   }
 
   _handleHeaderPacket(ReadBuffer response) {
-    log.fine('Got a header packet');
-    _resultSetHeaderPacket = new ResultSetHeaderPacket.fromBuffer(response);
-    log.fine(_resultSetHeaderPacket.toString());
+    // var resultSetHeaderPacket = new ResultSetHeaderPacket.fromBuffer(response);
     _state = STATE_FIELD_PACKETS;
   }
 
-  _handleFieldPacket(ReadBuffer response) {
-    log.fine('Got a field packet');
+  void _handleFieldPacket(ReadBuffer response) {
     var fieldPacket = new Field.fromBuffer(response);
-    log.fine(fieldPacket.toString());
     fieldPackets.add(fieldPacket);
   }
 
   void _handleRowPacket(ReadBuffer response) {
-    log.fine('Got a row packet');
     List<dynamic> values = parseBinaryDataResponse(response, fieldPackets);
     var dataPacket = new Row(values, _fieldIndex);
-    log.fine(dataPacket.toString());
     _streamController.add(dataPacket);
   }
 
@@ -386,4 +369,11 @@ class ExecuteQueryHandler extends Handler {
     }
     return fieldIndex;
   }
+
+  @override
+  Future<StreamedResults> get streamedResults => _resultsCompleter.future;
+
+  static const int STATE_HEADER_PACKET = 0;
+  static const int STATE_FIELD_PACKETS = 1;
+  static const int STATE_ROW_PACKETS = 2;
 }

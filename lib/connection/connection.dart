@@ -37,6 +37,8 @@ class MySqlConnection {
     if (_sentClose) return;
     _sentClose = true;
 
+    // TODO peacefully close the current handler!
+
     try {
       await _socket.execHandlerNoResponse(new QuitHandler(), _timeout);
     } catch (e) {
@@ -99,17 +101,42 @@ class MySqlConnection {
     return (await queryMulti(sql, [values])).first;
   }
 
-  Future<List<Results>> queryMulti(String sql, Iterable<List> values) async {
-    var prepared;
-    var ret = <Results>[];
+  Future<StreamedResults> queryStreamed(String sql, [List values]) async {
+    if (values == null || values.isEmpty) {
+      return _socket.execHandlerWithResultsStreamed(
+          new QueryStreamHandler(sql), _timeout);
+    }
+
+    PreparedQuery prepared;
     try {
       prepared = await _socket.execHandler(new PrepareHandler(sql), _timeout);
       logger.fine("Prepared queryMulti query for: $sql");
 
-      for (List v in values) {
+      var handler =
+          new ExecuteQueryHandler(prepared, false /* executed */, values);
+      return _socket.execHandlerWithResultsStreamed(handler, _timeout);
+    } finally {
+      if (prepared != null) {
+        await _socket.execHandlerNoResponse(
+            new CloseStatementHandler(prepared.statementHandlerId), _timeout);
+      }
+      // TODO throw?
+    }
+    return null;
+  }
+
+  Future<List<Results>> queryMulti(String sql, Iterable<List> values) async {
+    PreparedQuery prepared;
+    var ret = new List<Results>()..length = values.length;
+    try {
+      prepared = await _socket.execHandler(new PrepareHandler(sql), _timeout);
+      logger.fine("Prepared queryMulti query for: $sql");
+
+      for (int i = 0; i < values.length; i++) {
+        List v = values.elementAt(i);
         var handler =
             new ExecuteQueryHandler(prepared, false /* executed */, v);
-        ret.add(await _socket.execHandlerWithResults(handler, _timeout));
+        ret[i] = await _socket.execHandlerWithResults(handler, _timeout);
       }
     } finally {
       if (prepared != null) {

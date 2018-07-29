@@ -3,9 +3,9 @@ library sqljocky.prepare_handler;
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:typed_buffer/typed_buffer.dart';
 import 'package:sqljocky5/exceptions/exceptions.dart';
 import '../handlers/handler.dart';
 import '../results/field.dart';
@@ -13,23 +13,24 @@ import '../results/field.dart';
 import 'prepared_query.dart';
 import 'prepare_ok_packet.dart';
 
+export 'prepared_query.dart';
+
 class PrepareHandler extends Handler {
-  final String _sql;
+  final String sql;
   PrepareOkPacket _okPacket;
   int _parametersToRead;
   int _columnsToRead;
   List<Field> _parameters;
   List<Field> _columns;
 
-  String get sql => _sql;
   PrepareOkPacket get okPacket => _okPacket;
   List<Field> get parameters => _parameters;
   List<Field> get columns => _columns;
 
-  PrepareHandler(String this._sql) : super(new Logger("PrepareHandler"));
+  PrepareHandler(String this.sql) : super(new Logger("PrepareHandler"));
 
   Uint8List createRequest() {
-    List<int> encoded = utf8.encode(_sql);
+    List<int> encoded = utf8.encode(sql);
     var buffer = new FixedWriteBuffer(encoded.length + 1);
     buffer.byte = COM_STMT_PREPARE;
     buffer.writeList(encoded);

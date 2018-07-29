@@ -107,7 +107,6 @@ class Comm {
     _handler = handler;
 
     _packetNums.reset();
-    ;
 
     await _sender.send(handler.createRequest(), _packetNums,
         compress: _useCompression);
@@ -118,9 +117,10 @@ class Comm {
     return pool.withResource(() => _processHandler(handler).timeout(timeout));
   }
 
-  Future<Results> execHandlerWithResults(Handler handler, Duration timeout) {
+  Future<Results> execHandlerWithResults(
+      HandlerWithResult handler, Duration timeout) {
     return pool.withResource(() async {
-      ResultsStream results = await _processHandler(handler).timeout(timeout);
+      StreamedResults results = await _processHandler(handler).timeout(timeout);
 
       // Read all of the results. This is so we can close the handler before
       // returning to the user.
@@ -131,18 +131,10 @@ class Comm {
     });
   }
 
-  Future<Results> execHandlerWithResultsStreamed(
-      Handler handler, Duration timeout) {
-    return pool.withResource(() async {
-      ResultsStream results = await _processHandler(handler).timeout(timeout);
-
-      // Read all of the results. This is so we can close the handler before
-      // returning to the user.
-      // Obviously this is not super efficient but it guarantees correct api use.
-      Results ret = await Results.read(results).timeout(timeout);
-
-      return ret;
-    });
+  Future<StreamedResults> execHandlerWithResultsStreamed(
+      HandlerWithResult handler, Duration timeout) {
+    pool.withResource(() => _processHandler(handler).timeout(timeout));
+    return handler.streamedResults;
   }
 
   /// This method just sends the handler data.

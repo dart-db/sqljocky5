@@ -17,40 +17,38 @@ class Results extends IterableBase<Row> {
 
   Results(this._rows, this.fields, this.insertId, this.affectedRows);
 
-  static Future<Results> read(ResultsStream r) async {
+  static Future<Results> read(StreamedResults r) async {
     var rows = await r.toList();
     return new Results(rows, r.fields, r.insertId, r.affectedRows);
   }
 
   @override
-  Iterator<Row> get iterator {
-    return _rows.iterator;
-  }
+  Iterator<Row> get iterator => _rows.iterator;
 }
 
-class ResultsStream extends StreamView<Row> {
+class StreamedResults extends StreamView<Row> {
   final int insertId;
   final int affectedRows;
 
   final List<Field> fields;
 
-  factory ResultsStream(int insertId, int affectedRows, List<Field> fields,
+  factory StreamedResults(int insertId, int affectedRows, List<Field> fields,
       {Stream<Row> stream = null}) {
     if (stream != null) {
       var newStream = stream.transform(
           new StreamTransformer.fromHandlers(handleDone: (EventSink<Row> sink) {
         sink.close();
       }));
-      return new ResultsStream._fromStream(
+      return new StreamedResults._fromStream(
           insertId, affectedRows, fields, newStream);
     } else {
       var newStream = new Stream.fromIterable(new List<Row>());
-      return new ResultsStream._fromStream(
+      return new StreamedResults._fromStream(
           insertId, affectedRows, fields, newStream);
     }
   }
 
-  ResultsStream._fromStream(
+  StreamedResults._fromStream(
       this.insertId, this.affectedRows, List<Field> fields, Stream<Row> stream)
       : this.fields = new UnmodifiableListView(fields),
         super(stream);
@@ -58,10 +56,10 @@ class ResultsStream extends StreamView<Row> {
   /// Takes a _ResultsImpl and destreams it. That is, it listens to the stream, collecting
   /// all the rows into a list until the stream has finished. It then returns a new
   /// _ResultsImpl which wraps that list of rows.
-  static Future<ResultsStream> destream(ResultsStream results) async {
+  static Future<StreamedResults> destream(StreamedResults results) async {
     var rows = await results.toList();
     var newStream = new Stream<Row>.fromIterable(rows);
-    return new ResultsStream._fromStream(
+    return new StreamedResults._fromStream(
         results.insertId, results.affectedRows, results.fields, newStream);
   }
 }

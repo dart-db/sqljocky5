@@ -1,5 +1,6 @@
 library sqljocky.handler;
 
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:logging/logging.dart';
 
@@ -8,6 +9,7 @@ import 'package:sqljocky5/exceptions/exceptions.dart';
 import '../prepared_statements/prepare_ok_packet.dart';
 import 'ok_packet.dart';
 import 'package:typed_buffer/typed_buffer.dart';
+import '../results/results.dart';
 
 export 'dart:typed_data' show Uint8List;
 
@@ -56,6 +58,12 @@ abstract class Handler {
     }
     return null;
   }
+}
+
+abstract class HandlerWithResult extends Handler {
+  Future<StreamedResults> get streamedResults;
+
+  HandlerWithResult(Logger log): super(log);
 }
 
 /**

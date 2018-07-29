@@ -18,7 +18,7 @@ import '../results/results.dart';
 import 'result_set_header_packet.dart';
 import 'package:sqljocky5/results/standard_data_packet.dart';
 
-class QueryStreamHandler extends Handler {
+class QueryStreamHandler extends HandlerWithResult {
   final String sql;
   int _state = stateHeaderPacket;
 
@@ -29,6 +29,8 @@ class QueryStreamHandler extends Handler {
   Map<String, int> _fieldIndex;
 
   StreamController<Row> _streamController;
+
+  final _resultsCompleter = Completer<StreamedResults>();
 
   QueryStreamHandler(String this.sql) : super(new Logger("QueryStreamHandler"));
 
@@ -69,15 +71,19 @@ class QueryStreamHandler extends Handler {
     return HandlerResponse.notFinished;
   }
 
+  @override
+  Future<StreamedResults> get streamedResults => _resultsCompleter.future;
+
   _handleEndOfFields() {
     _state = stateRowPacket;
     _streamController = new StreamController<Row>(onCancel: () {
       _streamController.close();
     });
     this._fieldIndex = createFieldIndex();
-    return new HandlerResponse(
-        result: new ResultsStream(null, null, fieldPackets,
-            stream: _streamController.stream));
+    var stream = new StreamedResults(null, null, fieldPackets,
+        stream: _streamController.stream);
+    _resultsCompleter.complete(stream);
+    return new HandlerResponse(result: stream);
   }
 
   _handleEndOfRows() {
@@ -117,10 +123,10 @@ class QueryStreamHandler extends Handler {
     }
 
     //TODO is this finished value right?
-    return new HandlerResponse(
-        finished: finished,
-        result: new ResultsStream(
-            _okPacket.insertId, _okPacket.affectedRows, fieldPackets));
+    var stream = new StreamedResults(
+        _okPacket.insertId, _okPacket.affectedRows, fieldPackets);
+    _resultsCompleter.complete(stream);
+    return new HandlerResponse(finished: finished, result: stream);
   }
 
   Map<String, int> createFieldIndex() {
