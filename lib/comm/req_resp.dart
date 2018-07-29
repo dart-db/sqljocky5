@@ -14,7 +14,7 @@ import '../results/results_impl.dart';
 import '../results/row.dart';
 import '../auth/handshake_handler.dart';
 
-class ReqRespConnection {
+class ReqRespSocket {
   /// Underlying socket
   final BufferedSocket _socket;
 
@@ -37,7 +37,7 @@ class ReqRespConnection {
   /// Sets the maximum packet size limit
   final int maxPacketSize;
 
-  ReqRespConnection(this._socket, this._handler, Completer handshakeCompleter,
+  ReqRespSocket(this._socket, this._handler, Completer handshakeCompleter,
       this.maxPacketSize)
       : _headerBuffer = new Buffer(headerSize),
         _compressedHeaderBuffer = new Buffer(compressionHeaderSize),
