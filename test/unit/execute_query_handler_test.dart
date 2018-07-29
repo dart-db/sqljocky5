@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:mockito/mockito.dart';
 
-import 'package:sqljocky5/src/blob.dart';
+import 'package:sqljocky5/results/blob.dart';
 import 'package:sqljocky5/src/prepared_statements/execute_query_handler.dart';
 
 import 'package:sqljocky5/src/prepared_statements/prepared_query.dart';

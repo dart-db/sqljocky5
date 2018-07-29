@@ -5,9 +5,9 @@ import 'package:sqljocky5/src/auth/auth_handler.dart';
 import 'package:sqljocky5/src/auth/character_set.dart';
 import 'package:sqljocky5/src/auth/handshake_handler.dart';
 import 'package:sqljocky5/src/auth/ssl_handler.dart';
-import 'package:sqljocky5/src/buffer.dart';
+import 'package:sqljocky5/comm/buffer.dart';
 import 'package:sqljocky5/src/handlers/handler.dart';
-import 'package:sqljocky5/src/mysql_client_error.dart';
+import 'package:sqljocky5/exceptions/client_error.dart';
 
 import 'package:test/test.dart';
 

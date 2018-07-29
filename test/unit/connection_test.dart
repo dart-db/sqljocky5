@@ -5,9 +5,9 @@ import 'dart:async';
 import 'package:mockito/mockito.dart';
 
 //import 'package:sqljocky5/src/connection.dart';
-import 'package:sqljocky5/src/buffer.dart';
-import 'package:sqljocky5/src/buffered_socket.dart';
-import 'package:sqljocky5/src/mysql_client_error.dart';
+import 'package:sqljocky5/comm/buffer.dart';
+import 'package:sqljocky5/comm/buffered_socket.dart';
+import 'package:sqljocky5/exceptions/client_error.dart';
 
 import 'package:sqljocky5/src/single_connection.dart';
 import 'package:test/test.dart';
