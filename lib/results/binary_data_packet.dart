@@ -1,13 +1,12 @@
 library sqljocky.binary_data_packet;
 
 import 'package:sqljocky5/constants.dart';
-
 import 'package:sqljocky5/results/blob.dart';
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 import '../results/field.dart';
 
-List<dynamic> parseBinaryDataResponse(Buffer buffer, List<Field> fields) {
+List<dynamic> parseBinaryDataResponse(ReadBuffer buffer, List<Field> fields) {
   buffer.skip(1);
   var nulls = buffer.readList(((fields.length + 7 + 2) / 8).floor().toInt());
   var nullMap = new List<bool>(fields.length);
@@ -37,40 +36,40 @@ List<dynamic> parseBinaryDataResponse(Buffer buffer, List<Field> fields) {
   return values;
 }
 
-dynamic _readField(Field field, Buffer buffer) {
+dynamic _readField(Field field, ReadBuffer buffer) {
   switch (field.type) {
     case FIELD_TYPE_BLOB:
       var len = buffer.readLengthCodedBinary();
       var value = new Blob.fromBytes(buffer.readList(len));
       return value;
     case FIELD_TYPE_TINY:
-      var value = buffer.readByte();
+      var value = buffer.byte;
       return value;
     case FIELD_TYPE_SHORT:
-      var value = buffer.readInt16();
+      var value = buffer.int16;
       return value;
     case FIELD_TYPE_INT24:
-      var value = buffer.readInt32();
+      var value = buffer.int32;
       return value;
     case FIELD_TYPE_LONG:
-      var value = buffer.readInt32();
+      var value = buffer.int32;
       return value;
     case FIELD_TYPE_LONGLONG:
-      var value = buffer.readInt64();
+      var value = buffer.int64;
       return value;
     case FIELD_TYPE_NEWDECIMAL:
-      var len = buffer.readByte();
+      var len = buffer.byte;
       var num = buffer.readString(len);
       var value = double.parse(num);
       return value;
     case FIELD_TYPE_FLOAT:
-      var value = buffer.readFloat();
+      var value = buffer.float;
       return value;
     case FIELD_TYPE_DOUBLE:
-      var value = buffer.readDouble();
+      var value = buffer.double_;
       return value;
     case FIELD_TYPE_BIT:
-      var len = buffer.readByte();
+      var len = buffer.byte;
       var list = buffer.readList(len);
       var value = 0;
       for (var num in list) {
@@ -80,7 +79,7 @@ dynamic _readField(Field field, Buffer buffer) {
     case FIELD_TYPE_DATETIME:
     case FIELD_TYPE_DATE:
     case FIELD_TYPE_TIMESTAMP:
-      var len = buffer.readByte();
+      var len = buffer.byte;
       var date = buffer.readList(len);
       var year = 0;
       var month = 0;
@@ -111,7 +110,7 @@ dynamic _readField(Field field, Buffer buffer) {
           year, month, day, hours, minutes, seconds, billionths ~/ 1000000);
       return value;
     case FIELD_TYPE_TIME:
-      var len = buffer.readByte();
+      var len = buffer.byte;
       var time = buffer.readList(len);
 
       var sign = 1;
@@ -143,7 +142,7 @@ dynamic _readField(Field field, Buffer buffer) {
           milliseconds: (billionths ~/ 1000000) * sign);
       return value;
     case FIELD_TYPE_YEAR:
-      var value = buffer.readInt16();
+      var value = buffer.int16;
       return value;
     case FIELD_TYPE_STRING:
       var value = buffer.readLengthCodedString();
@@ -152,7 +151,7 @@ dynamic _readField(Field field, Buffer buffer) {
       var value = buffer.readLengthCodedString();
       return value;
     case FIELD_TYPE_GEOMETRY:
-      var len = buffer.readByte();
+      var len = buffer.byte;
       //TODO
       var value = buffer.readList(len);
       return value;

@@ -3,7 +3,7 @@ library sqljocky.close_statement_handler;
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 import '../handlers/handler.dart';
 
 class CloseStatementHandler extends Handler {
@@ -12,10 +12,10 @@ class CloseStatementHandler extends Handler {
   CloseStatementHandler(int this._handle)
       : super(new Logger("CloseStatementHandler"));
 
-  Buffer createRequest() {
-    var buffer = new Buffer(5);
-    buffer.writeByte(COM_STMT_CLOSE);
-    buffer.writeUint32(_handle);
-    return buffer;
+  Uint8List createRequest() {
+    var buffer = new FixedWriteBuffer(5);
+    buffer.byte = COM_STMT_CLOSE;
+    buffer.uint32 = _handle;
+    return buffer.data;
   }
 }

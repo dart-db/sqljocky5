@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 import '../handlers/handler.dart';
 import '../handlers/ok_packet.dart';
@@ -19,11 +19,8 @@ import 'result_set_header_packet.dart';
 import 'package:sqljocky5/results/standard_data_packet.dart';
 
 class QueryStreamHandler extends Handler {
-  static const int STATE_HEADER_PACKET = 0;
-  static const int STATE_FIELD_PACKETS = 1;
-  static const int STATE_ROW_PACKETS = 2;
-  final String _sql;
-  int _state = STATE_HEADER_PACKET;
+  final String sql;
+  int _state = stateHeaderPacket;
 
   OkPacket _okPacket;
   ResultSetHeaderPacket _resultSetHeaderPacket;
@@ -33,36 +30,35 @@ class QueryStreamHandler extends Handler {
 
   StreamController<Row> _streamController;
 
-  QueryStreamHandler(String this._sql)
-      : super(new Logger("QueryStreamHandler"));
+  QueryStreamHandler(String this.sql) : super(new Logger("QueryStreamHandler"));
 
-  Buffer createRequest() {
-    var encoded = utf8.encode(_sql);
-    var buffer = new Buffer(encoded.length + 1);
-    buffer.writeByte(COM_QUERY);
+  Uint8List createRequest() {
+    var encoded = utf8.encode(sql);
+    var buffer = new FixedWriteBuffer(encoded.length + 1);
+    buffer.byte = COM_QUERY;
     buffer.writeList(encoded);
-    return buffer;
+    return buffer.data;
   }
 
-  HandlerResponse processResponse(Buffer response) {
+  HandlerResponse processResponse(ReadBuffer response) {
     log.fine("Processing query response");
-    var packet = checkResponse(response, false, _state == STATE_ROW_PACKETS);
+    var packet = checkResponse(response, false, _state == stateRowPacket);
     if (packet == null) {
       if (response[0] == PACKET_EOF) {
-        if (_state == STATE_FIELD_PACKETS) {
+        if (_state == stateFieldPacket) {
           return _handleEndOfFields();
-        } else if (_state == STATE_ROW_PACKETS) {
+        } else if (_state == stateRowPacket) {
           return _handleEndOfRows();
         }
       } else {
         switch (_state) {
-          case STATE_HEADER_PACKET:
+          case stateHeaderPacket:
             _handleHeaderPacket(response);
             break;
-          case STATE_FIELD_PACKETS:
+          case stateFieldPacket:
             _handleFieldPacket(response);
             break;
-          case STATE_ROW_PACKETS:
+          case stateRowPacket:
             _handleRowPacket(response);
             break;
         }
@@ -74,7 +70,7 @@ class QueryStreamHandler extends Handler {
   }
 
   _handleEndOfFields() {
-    _state = STATE_ROW_PACKETS;
+    _state = stateRowPacket;
     _streamController = new StreamController<Row>(onCancel: () {
       _streamController.close();
     });
@@ -88,24 +84,24 @@ class QueryStreamHandler extends Handler {
     // the connection's _handler field needs to have been nulled out before the stream is closed,
     // otherwise the stream will be reused in an unfinished state.
     // TODO: can we use Future.delayed elsewhere, to make reusing connections nicer?
-//    new Future.delayed(new Duration(seconds: 0), _streamController.close);
+    //    new Future.delayed(new Duration(seconds: 0), _streamController.close);
     _streamController.close();
     return new HandlerResponse(finished: true);
   }
 
-  _handleHeaderPacket(Buffer response) {
+  _handleHeaderPacket(ReadBuffer response) {
     _resultSetHeaderPacket = new ResultSetHeaderPacket.fromBuffer(response);
     log.fine(_resultSetHeaderPacket.toString());
-    _state = STATE_FIELD_PACKETS;
+    _state = stateFieldPacket;
   }
 
-  _handleFieldPacket(Buffer response) {
+  _handleFieldPacket(ReadBuffer response) {
     var fieldPacket = new Field.fromBuffer(response);
     log.fine(fieldPacket.toString());
     fieldPackets.add(fieldPacket);
   }
 
-  _handleRowPacket(Buffer response) {
+  _handleRowPacket(ReadBuffer response) {
     List<dynamic> values = parseStandardDataResponse(response, fieldPackets);
     var row = new Row(values, _fieldIndex);
     log.fine(row.toString());
@@ -140,7 +136,9 @@ class QueryStreamHandler extends Handler {
   }
 
   @override
-  String toString() {
-    return "QueryStreamHandler($_sql)";
-  }
+  String toString() => "QueryStreamHandler($sql)";
+
+  static const int stateHeaderPacket = 0;
+  static const int stateFieldPacket = 1;
+  static const int stateRowPacket = 2;
 }

@@ -2,11 +2,9 @@
 library sqljocky;
 
 export 'package:sqljocky5/results/blob.dart';
-export 'package:sqljocky5/exceptions/client_error.dart';
-export 'package:sqljocky5/exceptions/mysql_exception.dart';
-export 'package:sqljocky5/exceptions/protocol_error.dart';
+export 'exceptions/exceptions.dart';
 export 'connection/connection.dart'
-    show MySqlConnection, Results, ConnectionSettings, CharacterSet;
+    show MySqlConnection, ConnectionSettings, CharacterSet;
 
 export 'results/field.dart';
 export 'results/row.dart';

@@ -1,6 +1,6 @@
 library sqljocky.result_set_header_packet;
 
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 class ResultSetHeaderPacket {
   final int fieldCount;
@@ -8,10 +8,10 @@ class ResultSetHeaderPacket {
 
   ResultSetHeaderPacket(this.fieldCount, this.extra);
 
-  factory ResultSetHeaderPacket.fromBuffer(Buffer buffer) {
+  factory ResultSetHeaderPacket.fromBuffer(ReadBuffer buffer) {
     int fieldCount = buffer.readLengthCodedBinary();
     int extra;
-    if (buffer.canReadMore()) extra = buffer.readLengthCodedBinary();
+    if (buffer.canReadMore) extra = buffer.readLengthCodedBinary();
     return new ResultSetHeaderPacket(fieldCount, extra);
   }
 

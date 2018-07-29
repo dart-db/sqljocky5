@@ -1,6 +1,6 @@
 library results.field;
 
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 /// A MySQL field
 class Field {
@@ -33,7 +33,7 @@ class Field {
       this.decimals,
       this.defaultValue});
 
-  factory Field.fromBuffer(Buffer buffer) {
+  factory Field.fromBuffer(ReadBuffer buffer) {
     String catalog = buffer.readLengthCodedString();
     String db = buffer.readLengthCodedString();
     String table = buffer.readLengthCodedString();
@@ -41,14 +41,14 @@ class Field {
     String name = buffer.readLengthCodedString();
     String orgName = buffer.readLengthCodedString();
     buffer.skip(1);
-    int characterSet = buffer.readUint16();
-    int length = buffer.readUint32();
-    int type = buffer.readByte();
-    int flags = buffer.readUint16();
-    int decimals = buffer.readByte();
+    int characterSet = buffer.uint16;
+    int length = buffer.uint32;
+    int type = buffer.byte;
+    int flags = buffer.uint16;
+    int decimals = buffer.byte;
     buffer.skip(2);
     int defaultValue;
-    if (buffer.canReadMore()) defaultValue = buffer.readLengthCodedBinary();
+    if (buffer.canReadMore) defaultValue = buffer.readLengthCodedBinary();
 
     return Field(name,
         catalog: catalog,

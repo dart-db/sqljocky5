@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 import 'package:sqljocky5/exceptions/exceptions.dart';
 import '../handlers/handler.dart';
 import '../results/field.dart';
@@ -28,15 +28,15 @@ class PrepareHandler extends Handler {
 
   PrepareHandler(String this._sql) : super(new Logger("PrepareHandler"));
 
-  Buffer createRequest() {
-    var encoded = utf8.encode(_sql);
-    var buffer = new Buffer(encoded.length + 1);
-    buffer.writeByte(COM_STMT_PREPARE);
+  Uint8List createRequest() {
+    List<int> encoded = utf8.encode(_sql);
+    var buffer = new FixedWriteBuffer(encoded.length + 1);
+    buffer.byte = COM_STMT_PREPARE;
     buffer.writeList(encoded);
-    return buffer;
+    return buffer.data;
   }
 
-  HandlerResponse processResponse(Buffer response) {
+  HandlerResponse processResponse(ReadBuffer response) {
     log.fine("Prepare processing response");
     var packet = checkResponse(response, true);
     if (packet == null) {

@@ -1,12 +1,15 @@
 library sqljocky.handler;
 
+import 'dart:typed_data';
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:sqljocky5/comm/buffer.dart';
 import 'package:sqljocky5/exceptions/exceptions.dart';
 import '../prepared_statements/prepare_ok_packet.dart';
 import 'ok_packet.dart';
+import 'package:typed_buffer/typed_buffer.dart';
+
+export 'dart:typed_data' show Uint8List;
 
 class _NoResult {
   const _NoResult();
@@ -30,7 +33,9 @@ class HandlerResponse {
   bool get hasResult => result != _NO_RESULT;
 
   HandlerResponse(
-      {this.finished: false, this.nextHandler: null, this.result: _NO_RESULT});
+      {this.finished = false,
+      this.nextHandler = null,
+      this.result = _NO_RESULT});
 
   static final HandlerResponse notFinished = new HandlerResponse();
 }
@@ -50,7 +55,7 @@ abstract class Handler {
   /**
    * Returns a [Buffer] containing the command packet.
    */
-  Buffer createRequest();
+  Uint8List createRequest();
 
   /**
    * Parses a [Buffer] containing the response to the command.
@@ -58,7 +63,7 @@ abstract class Handler {
    * implementation returns a finished [_HandlerResponse] with
    * a result which is obtained by calling [checkResponse]
    */
-  HandlerResponse processResponse(Buffer response) =>
+  HandlerResponse processResponse(ReadBuffer response) =>
       new HandlerResponse(finished: true, result: checkResponse(response));
 
   /**
@@ -67,7 +72,7 @@ abstract class Handler {
    * a [MySqlException] if it was an Error packet, or returns [:null:]
    * if the packet has not been handled by this method.
    */
-  dynamic checkResponse(Buffer response,
+  dynamic checkResponse(ReadBuffer response,
       [bool prepareStmt = false, bool isHandlingRows = false]) {
     if (response[0] == PACKET_OK && !isHandlingRows) {
       if (prepareStmt) {

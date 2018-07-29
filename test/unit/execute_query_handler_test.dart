@@ -105,7 +105,7 @@ void main() {
       handler.preparedValues = [];
       var buffer = handler.writeValuesToBuffer([], 0, types);
       expect(buffer.length, equals(11));
-      expect(buffer.list, equals([23, 123, 0, 0, 0, 0, 1, 0, 0, 0, 1]));
+      expect(buffer.data, equals([23, 123, 0, 0, 0, 0, 1, 0, 0, 0, 1]));
     });
 
     test('can write values for executed query', () {
@@ -116,7 +116,7 @@ void main() {
       handler.preparedValues = [];
       var buffer = handler.writeValuesToBuffer([], 0, types);
       expect(buffer.length, equals(11));
-      expect(buffer.list, equals([23, 123, 0, 0, 0, 0, 1, 0, 0, 0, 0]));
+      expect(buffer.data, equals([23, 123, 0, 0, 0, 0, 1, 0, 0, 0, 0]));
     });
 
     test('can write values for executed query with nullmap', () {
@@ -128,7 +128,7 @@ void main() {
       var buffer = handler.writeValuesToBuffer([5, 6, 7], 0, types);
       expect(buffer.length, equals(14));
       expect(
-          buffer.list, equals([23, 123, 0, 0, 0, 0, 1, 0, 0, 0, 5, 6, 7, 0]));
+          buffer.data, equals([23, 123, 0, 0, 0, 0, 1, 0, 0, 0, 5, 6, 7, 0]));
     });
 
     test('can write values for unexecuted query with values', () {
@@ -141,7 +141,7 @@ void main() {
       var buffer = handler.writeValuesToBuffer([5, 6, 7], 8, types);
       expect(buffer.length, equals(23));
       expect(
-          buffer.list,
+          buffer.data,
           equals([
             23,
             123,

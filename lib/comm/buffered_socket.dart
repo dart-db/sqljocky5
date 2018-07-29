@@ -2,8 +2,8 @@ library buffered_socket;
 
 import 'dart:io';
 import 'dart:async';
-import 'package:logging/logging.dart';
-import 'package:sqljocky5/comm/buffer.dart';
+import 'dart:typed_data';
+import 'package:typed_buffer/typed_buffer.dart';
 
 typedef ErrorHandler(AsyncError err);
 typedef DoneHandler();
@@ -11,38 +11,34 @@ typedef DataReadyHandler();
 typedef ClosedHandler();
 
 typedef Future<RawSocket> SocketFactory(host, int port);
-typedef OnConnection(BufferedSocket scoket);
+typedef OnConnection(BufferedSocket socket);
 
 class BufferedSocket {
-  final Logger log;
-
   ErrorHandler onError;
   DoneHandler onDone;
   ClosedHandler onClosed;
 
-  /**
-   * When data arrives and there is no read currently in progress, the onDataReady handler is called.
-   */
+  /// When data arrives and there is no read currently in progress, the
+  /// [onDataReady] handler is called.
   DataReadyHandler onDataReady;
 
   RawSocket _socket;
 
-  Buffer _writingBuffer;
+  Uint8List _writingBuffer;
   int _writeOffset;
   int _writeLength;
-  Completer<Buffer> _writeCompleter;
+  Completer<void> _writeCompleter;
 
-  Buffer _readingBuffer;
+  ReadBuffer _readingBuffer;
   int _readOffset;
-  Completer<Buffer> _readCompleter;
+  Completer<ReadBuffer> _readCompleter;
   StreamSubscription _subscription;
   bool _closed = false;
 
   bool get closed => _closed;
 
-  BufferedSocket._(
-      this._socket, this.onDataReady, this.onDone, this.onError, this.onClosed)
-      : log = new Logger("BufferedSocket") {
+  BufferedSocket._(this._socket, this.onDataReady, this.onDone, this.onError,
+      this.onClosed) {
     _subscription = _socket.listen(_onData,
         onError: _onSocketError, onDone: _onSocketDone, cancelOnError: true);
   }
@@ -84,9 +80,7 @@ class BufferedSocket {
     }
 
     if (event == RawSocketEvent.read) {
-      log.fine("READ data");
       if (_readingBuffer == null) {
-        log.fine("READ data: no buffer");
         if (onDataReady != null) {
           onDataReady();
         }
@@ -94,14 +88,11 @@ class BufferedSocket {
         _readBuffer();
       }
     } else if (event == RawSocketEvent.readClosed) {
-      log.fine("READ_CLOSED");
       if (this.onClosed != null) {
         this.onClosed();
       }
     } else if (event == RawSocketEvent.closed) {
-      log.fine("CLOSED");
     } else if (event == RawSocketEvent.write) {
-      log.fine("WRITE data");
       if (_writingBuffer != null) {
         _writeBuffer();
       }
@@ -112,12 +103,11 @@ class BufferedSocket {
    * Writes [buffer] to the socket, and returns the same buffer in a [Future] which
    * completes when it has all been written.
    */
-  Future<Buffer> writeBuffer(Buffer buffer) {
+  Future<void> writeBuffer(Uint8List buffer) {
     return writeBufferPart(buffer, 0, buffer.length);
   }
 
-  Future<Buffer> writeBufferPart(Buffer buffer, int start, int length) {
-    log.fine("writeBuffer length=${buffer.length}");
+  Future<void> writeBufferPart(Uint8List buffer, int start, int length) {
     if (_closed) {
       throw new StateError("Cannot write to socket, it is closed");
     }
@@ -125,7 +115,7 @@ class BufferedSocket {
       throw new StateError("Cannot write to socket, already writing");
     }
     _writingBuffer = buffer;
-    _writeCompleter = new Completer<Buffer>();
+    _writeCompleter = new Completer<void>();
     _writeOffset = start;
     _writeLength = length + start;
 
@@ -135,13 +125,8 @@ class BufferedSocket {
   }
 
   void _writeBuffer() {
-    log.fine("_writeBuffer offset=${_writeOffset}");
-    int bytesWritten = _writingBuffer.writeToSocket(
-        _socket, _writeOffset, _writeLength - _writeOffset);
-    log.fine("Wrote $bytesWritten bytes");
-    if (log.isLoggable(Level.FINE)) {
-      log.fine("\n${Buffer.debugChars(_writingBuffer.list)}");
-    }
+    int bytesWritten = _socket.write(
+        _writingBuffer, _writeOffset, _writeLength - _writeOffset);
     _writeOffset += bytesWritten;
     if (_writeOffset == _writeLength) {
       _writeCompleter.complete(_writingBuffer);
@@ -159,34 +144,27 @@ class BufferedSocket {
    * onDataReady is called, in which case onDataReady will not be called when data arrives,
    * and the read will start instead.
    */
-  Future<Buffer> readBuffer(Buffer buffer) {
-    log.fine("readBuffer, length=${buffer.length}");
-    if (_closed) {
-      throw new StateError("Cannot read from socket, it is closed");
-    }
-    if (_readingBuffer != null) {
-      throw new StateError("Cannot read from socket, already reading");
-    }
+  Future<ReadBuffer> readBuffer(ReadBuffer buffer) {
+    if (_closed) throw new StateError("Cannot read from a closed socket!");
+
+    if (_readingBuffer != null)
+      throw new StateError("Cannot read from socket, already reading!");
+
     _readingBuffer = buffer;
     _readOffset = 0;
-    _readCompleter = new Completer<Buffer>();
+    _readCompleter = new Completer<ReadBuffer>();
 
-    if (_socket.available() > 0) {
-      log.fine("readBuffer, data already ready");
-      _readBuffer();
-    }
+    if (_socket.available() > 0) _readBuffer();
 
     return _readCompleter.future;
   }
 
   void _readBuffer() {
-    int bytesRead = _readingBuffer.readFromSocket(
-        _socket, _readingBuffer.length - _readOffset);
-    log.fine("read $bytesRead bytes");
-    if (log.isLoggable(Level.FINE)) {
-      log.fine("\n${Buffer.debugChars(_readingBuffer.list)}");
-    }
+    List<int> bytes = _socket.read(_readingBuffer.length - _readOffset);
+    int bytesRead = bytes.length;
+    _readingBuffer.data.setRange(_readOffset, _readOffset + bytesRead, bytes);
     _readOffset += bytesRead;
+
     if (_readOffset == _readingBuffer.length) {
       _readCompleter.complete(_readingBuffer);
       _readingBuffer = null;
@@ -199,10 +177,8 @@ class BufferedSocket {
   }
 
   Future startSSL() async {
-    log.fine("Securing socket");
     var socket = await RawSecureSocket.secure(_socket,
         subscription: _subscription, onBadCertificate: (cert) => true);
-    log.fine("Socket is secure");
     _socket = socket;
     _socket.setOption(SocketOption.tcpNoDelay, true);
     _subscription = _socket.listen(_onData,

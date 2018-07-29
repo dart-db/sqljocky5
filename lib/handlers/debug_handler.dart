@@ -1,17 +1,13 @@
 library sqljocky.debug_handler;
 
+import 'dart:typed_data';
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:sqljocky5/comm/buffer.dart';
 import 'handler.dart';
 
 class DebugHandler extends Handler {
   DebugHandler() : super(new Logger("DebugHandler"));
 
-  Buffer createRequest() {
-    var buffer = new Buffer(1);
-    buffer.writeByte(COM_DEBUG);
-    return buffer;
-  }
+  Uint8List createRequest() => new Uint8List(1)..[0] = COM_DEBUG;
 }

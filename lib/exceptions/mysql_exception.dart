@@ -1,6 +1,6 @@
 library sqljocky.my_sql_exception;
 
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 /// An exception returned by the MySQL server itself.
 class MySqlException implements Exception {
@@ -17,12 +17,12 @@ class MySqlException implements Exception {
 
   /// Creates a [MySqlException] based on an error response from the mysql
   /// server
-  factory MySqlException(Buffer buffer) {
+  factory MySqlException(ReadBuffer buffer) {
     buffer.seek(1);
-    var errorNumber = buffer.readUint16();
+    var errorNumber = buffer.uint16;
     buffer.skip(1);
     var sqlState = buffer.readString(5);
-    var message = buffer.readStringToEnd();
+    var message = buffer.stringToEnd;
 
     return new MySqlException._raw(errorNumber, sqlState, message);
   }

@@ -37,11 +37,11 @@ void main() {
       await cnx.sendBuffer(buffer);
       var captured = verify(socket.writeBuffer(captureAny)).captured;
       expect(captured[0], hasLength(4));
-      expect(captured[0].list, equals([3, 0, 0, 1]));
+      expect(captured[0].data, equals([3, 0, 0, 1]));
       captured =
           verify(socket.writeBufferPart(captureAny, captureAny, captureAny))
               .captured;
-      expect(captured[0].list, equals([1, 2, 3]));
+      expect(captured[0].data, equals([1, 2, 3]));
       expect(captured[1], equals(0));
       expect(captured[2], equals(3));
 
@@ -49,11 +49,11 @@ void main() {
       await cnx.sendBuffer(buffer);
       captured = verify(socket.writeBuffer(captureAny)).captured;
       expect(captured[0], hasLength(4));
-      expect(captured[0].list, equals([3, 0, 0, 2]));
+      expect(captured[0].data, equals([3, 0, 0, 2]));
       captured =
           verify(socket.writeBufferPart(captureAny, captureAny, captureAny))
               .captured;
-      expect(captured[0].list, equals([1, 2, 3]));
+      expect(captured[0].data, equals([1, 2, 3]));
       expect(captured[1], equals(0));
       expect(captured[2], equals(3));
     });
@@ -66,7 +66,7 @@ void main() {
       var buffers = [];
       when(socket.writeBuffer(any)).thenAnswer((mirror) {
         var buffer = mirror.positionalArguments[0];
-        buffers.add(new List.from(buffer.list));
+        buffers.add(new List.from(buffer.data));
         return new Future.value();
       });
       when(socket.writeBufferPart(any, any, any))
@@ -113,12 +113,12 @@ void main() {
         }
       }); // 2
 
-      cnx.readPacket();
+      cnx.receive();
 
       await c.future;
 
       verify(socket.readBuffer(any)).called(2);
-      expect(buffer.list, equals([1, 2, 3]));
+      expect(buffer.data, equals([1, 2, 3]));
     }, skip: "API Update");
 
     test('should receive large buffer', () async {
@@ -160,15 +160,15 @@ void main() {
       };
       when(socket.readBuffer(any)).thenAnswer(bufferReturn); // 4
 
-      cnx.readPacket();
+      cnx.receive();
 
       await c.future;
       verify(socket.readBuffer(any)).called(4);
-      expect(buffer.list.length, equals(17 * 1024 * 1024));
-      expect(buffer.list[0], equals(1));
-      expect(buffer.list[0xffffff - 1], equals(2));
-      expect(buffer.list[0xffffff], equals(3));
-      expect(buffer.list[buffer.list.length - 1], equals(4));
+      expect(buffer.data.length, equals(17 * 1024 * 1024));
+      expect(buffer.data[0], equals(1));
+      expect(buffer.data[0xffffff - 1], equals(2));
+      expect(buffer.data[0xffffff], equals(3));
+      expect(buffer.data[buffer.data.length - 1], equals(4));
     }, skip: "API Update");
   });
 }

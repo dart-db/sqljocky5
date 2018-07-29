@@ -4,12 +4,12 @@ import 'dart:convert';
 
 import 'package:sqljocky5/constants.dart';
 import 'package:sqljocky5/results/blob.dart';
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 import '../results/field.dart';
 
 List<dynamic> parseStandardDataResponse(
-    Buffer buffer, List<Field> fieldPackets) {
+    ReadBuffer buffer, List<Field> fieldPackets) {
   final values = new List<dynamic>(fieldPackets.length);
   for (var i = 0; i < fieldPackets.length; i++) {
     var list;

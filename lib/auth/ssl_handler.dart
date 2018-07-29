@@ -2,7 +2,7 @@ library sqljocky.ssl_handler;
 
 import 'package:logging/logging.dart';
 
-import '../comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 import '../handlers/handler.dart';
 
 class SSLHandler extends Handler {
@@ -16,14 +16,14 @@ class SSLHandler extends Handler {
       this.clientFlags, this.maxPacketSize, this.characterSet, this.nextHandler)
       : super(new Logger("SSLHandler"));
 
-  Buffer createRequest() {
-    var buffer = new Buffer(32);
+  Uint8List createRequest() {
+    var buffer = new FixedWriteBuffer(32);
     buffer.seekWrite(0);
-    buffer.writeUint32(clientFlags);
-    buffer.writeUint32(maxPacketSize);
-    buffer.writeByte(characterSet);
+    buffer.uint32 = clientFlags;
+    buffer.uint32 = maxPacketSize;
+    buffer.byte = characterSet;
     buffer.fill(23, 0);
 
-    return buffer;
+    return buffer.data;
   }
 }

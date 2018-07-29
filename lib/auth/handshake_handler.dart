@@ -4,7 +4,7 @@ import 'dart:math' as math;
 
 import 'package:logging/logging.dart';
 
-import '../comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 import '../handlers/handler.dart';
 import 'package:sqljocky5/exceptions/client_error.dart';
 import 'package:sqljocky5/constants.dart';
@@ -44,37 +44,37 @@ class HandshakeHandler extends Handler {
    * The server initiates the handshake after the client connects,
    * so a request will never be created.
    */
-  Buffer createRequest() {
+  Uint8List createRequest() {
     throw MySqlClientError("Cannot create a handshake request");
   }
 
-  void readResponseBuffer(Buffer response) {
+  void readResponseBuffer(ReadBuffer response) {
     response.seek(0);
-    protocolVersion = response.readByte();
+    protocolVersion = response.byte;
     if (protocolVersion != 10) {
       throw MySqlClientError("Protocol not supported");
     }
-    serverVersion = response.readNullTerminatedString();
-    threadId = response.readUint32();
+    serverVersion = response.nullTerminatedUtf8String;
+    threadId = response.uint32;
     var scrambleBuffer1 = response.readList(8);
     response.skip(1);
-    serverCapabilities = response.readUint16();
+    serverCapabilities = response.uint16;
     if (response.hasMore) {
-      serverLanguage = response.readByte();
-      serverStatus = response.readUint16();
-      serverCapabilities += (response.readUint16() << 0x10);
+      serverLanguage = response.byte;
+      serverStatus = response.uint16;
+      serverCapabilities += (response.uint16 << 0x10);
 
       //var secure = serverCapabilities & CLIENT_SECURE_CONNECTION;
       //var plugin = serverCapabilities & CLIENT_PLUGIN_AUTH;
 
-      scrambleLength = response.readByte();
+      scrambleLength = response.byte;
       response.skip(10);
       if (serverCapabilities & CLIENT_SECURE_CONNECTION > 0) {
         var scrambleBuffer2 =
             response.readList(math.max(13, scrambleLength - 8) - 1);
 
         // read null-terminator
-        response.readByte();
+        response.byte;
         scrambleBuffer =
             new List<int>(scrambleBuffer1.length + scrambleBuffer2.length);
         scrambleBuffer.setRange(0, 8, scrambleBuffer1);
@@ -84,7 +84,7 @@ class HandshakeHandler extends Handler {
       }
 
       if (serverCapabilities & CLIENT_PLUGIN_AUTH > 0) {
-        pluginName = response.readStringToEnd();
+        pluginName = response.stringToEnd;
         if (pluginName.codeUnitAt(pluginName.length - 1) == 0) {
           pluginName = pluginName.substring(0, pluginName.length - 1);
         }
@@ -99,7 +99,7 @@ class HandshakeHandler extends Handler {
    * Currently, if the client protocol version is not 4.1, an
    * exception is thrown.
    */
-  HandlerResponse processResponse(Buffer response) {
+  HandlerResponse processResponse(ReadBuffer response) {
     checkResponse(response);
 
     readResponseBuffer(response);

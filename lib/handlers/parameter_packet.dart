@@ -1,6 +1,6 @@
 library sqljocky.parameter_packet;
 
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 // not using this one yet
 class ParameterPacket {
@@ -14,10 +14,10 @@ class ParameterPacket {
   int get decimals => _decimals;
   int get length => _length;
 
-  ParameterPacket(Buffer buffer) {
-    _type = buffer.readUint16();
-    _flags = buffer.readUint16();
-    _decimals = buffer.readByte();
-    _length = buffer.readUint32();
+  ParameterPacket(ReadBuffer buffer) {
+    _type = buffer.uint16;
+    _flags = buffer.uint16;
+    _decimals = buffer.byte;
+    _length = buffer.uint32;
   }
 }

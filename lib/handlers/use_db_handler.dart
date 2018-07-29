@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 import 'handler.dart';
 
 class UseDbHandler extends Handler {
@@ -13,11 +13,11 @@ class UseDbHandler extends Handler {
 
   UseDbHandler(String this._dbName) : super(new Logger("UseDbHandler"));
 
-  Buffer createRequest() {
+  Uint8List createRequest() {
     var encoded = utf8.encode(_dbName);
-    var buffer = new Buffer(encoded.length + 1);
-    buffer.writeByte(COM_INIT_DB);
+    var buffer = new FixedWriteBuffer(encoded.length + 1);
+    buffer.byte = COM_INIT_DB;
     buffer.writeList(encoded);
-    return buffer;
+    return buffer.data;
   }
 }

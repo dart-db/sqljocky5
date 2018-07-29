@@ -1,6 +1,6 @@
 library sqljocky.prepare_ok_packet;
 
-import 'package:sqljocky5/comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 
 class PrepareOkPacket {
   int _statementHandlerId;
@@ -13,13 +13,13 @@ class PrepareOkPacket {
   int get parameterCount => _parameterCount;
   int get warningCount => _warningCount;
 
-  PrepareOkPacket(Buffer buffer) {
+  PrepareOkPacket(ReadBuffer buffer) {
     buffer.seek(1);
-    _statementHandlerId = buffer.readUint32();
-    _columnCount = buffer.readUint16();
-    _parameterCount = buffer.readUint16();
+    _statementHandlerId = buffer.uint32;
+    _columnCount = buffer.uint16;
+    _parameterCount = buffer.uint16;
     buffer.skip(1);
-    _warningCount = buffer.readUint16();
+    _warningCount = buffer.uint16;
   }
 
   String toString() =>

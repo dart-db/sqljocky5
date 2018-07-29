@@ -6,7 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import '../comm/buffer.dart';
+import 'package:typed_buffer/typed_buffer.dart';
 import '../handlers/handler.dart';
 
 class AuthHandler extends Handler {
@@ -36,7 +36,7 @@ class AuthHandler extends Handler {
     if (password == null) {
       hash = <int>[];
     } else {
-      final hashedPassword = sha1.convert(UTF8.encode(password)).bytes;
+      final hashedPassword = sha1.convert(utf8.encode(password)).bytes;
       final doubleHashedPassword = sha1.convert(hashedPassword).bytes;
 
       final bytes = new List<int>.from(scrambleBuffer)
@@ -51,35 +51,33 @@ class AuthHandler extends Handler {
     return hash;
   }
 
-  Buffer createRequest() {
+  Uint8List createRequest() {
     // calculate the mysql password hash
     var hash = getHash();
 
-    var encodedUsername = username == null ? [] : UTF8.encode(username);
+    var encodedUsername = username == null ? [] : utf8.encode(username);
     var encodedDb;
 
     var size = hash.length + encodedUsername.length + 2 + 32;
     var clientFlags = this.clientFlags;
     if (db != null) {
-      encodedDb = UTF8.encode(db);
+      encodedDb = utf8.encode(db);
       size += encodedDb.length + 1;
       clientFlags |= CLIENT_CONNECT_WITH_DB;
     }
 
-    var buffer = new Buffer(size);
+    var buffer = new FixedWriteBuffer(size);
     buffer.seekWrite(0);
-    buffer.writeUint32(clientFlags);
-    buffer.writeUint32(maxPacketSize);
-    buffer.writeByte(characterSet);
+    buffer.uint32 = clientFlags;
+    buffer.uint32 = maxPacketSize;
+    buffer.byte = characterSet;
     buffer.fill(23, 0);
-    buffer.writeNullTerminatedList(encodedUsername);
-    buffer.writeByte(hash.length);
+    buffer.nullTerminatedList = encodedUsername;
+    buffer.byte = hash.length;
     buffer.writeList(hash);
 
-    if (db != null) {
-      buffer.writeNullTerminatedList(encodedDb);
-    }
+    if (db != null) buffer.nullTerminatedList = encodedDb;
 
-    return buffer;
+    return buffer.data;
   }
 }
