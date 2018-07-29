@@ -94,7 +94,7 @@ class QueryStreamHandler extends Handler {
   }
 
   _handleHeaderPacket(Buffer response) {
-    _resultSetHeaderPacket = new ResultSetHeaderPacket(response);
+    _resultSetHeaderPacket = new ResultSetHeaderPacket.fromBuffer(response);
     log.fine(_resultSetHeaderPacket.toString());
     _state = STATE_FIELD_PACKETS;
   }
