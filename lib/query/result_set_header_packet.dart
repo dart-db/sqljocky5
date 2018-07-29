@@ -1,23 +1,19 @@
 library sqljocky.result_set_header_packet;
 
-import 'package:logging/logging.dart';
-
 import 'package:sqljocky5/comm/buffer.dart';
 
 class ResultSetHeaderPacket {
-  int _fieldCount;
-  int _extra;
-  Logger log;
+  final int fieldCount;
+  final int extra;
 
-  int get fieldCount => _fieldCount;
+  ResultSetHeaderPacket(this.fieldCount, this.extra);
 
-  ResultSetHeaderPacket(Buffer buffer) {
-    log = new Logger("ResultSetHeaderPacket");
-    _fieldCount = buffer.readLengthCodedBinary();
-    if (buffer.canReadMore()) {
-      _extra = buffer.readLengthCodedBinary();
-    }
+  factory ResultSetHeaderPacket.fromBuffer(Buffer buffer) {
+    int fieldCount = buffer.readLengthCodedBinary();
+    int extra;
+    if (buffer.canReadMore()) extra = buffer.readLengthCodedBinary();
+    return new ResultSetHeaderPacket(fieldCount, extra);
   }
 
-  String toString() => "Field count: $_fieldCount, Extra: $_extra";
+  String toString() => "Field count: $fieldCount, Extra: $extra";
 }

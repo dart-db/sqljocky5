@@ -16,7 +16,7 @@ import '../results/field.dart';
 import '../results/results_impl.dart';
 
 import 'result_set_header_packet.dart';
-import 'standard_data_packet.dart';
+import 'package:sqljocky5/results/standard_data_packet.dart';
 
 class QueryStreamHandler extends Handler {
   static const int STATE_HEADER_PACKET = 0;

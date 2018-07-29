@@ -10,7 +10,7 @@ import 'package:sqljocky5/comm/buffer.dart';
 import '../handlers/handler.dart';
 import '../handlers/ok_packet.dart';
 
-import 'binary_data_packet.dart';
+import 'package:sqljocky5/results/binary_data_packet.dart';
 import 'prepared_query.dart';
 
 import '../results/results_impl.dart';
