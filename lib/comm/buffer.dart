@@ -321,7 +321,7 @@ class Buffer {
    * Returns a 32-bit integer, read from the buffer.
    */
   int readInt32() {
-    int val = _data.getInt32(_readPos,Endian.little);
+    int val = _data.getInt32(_readPos, Endian.little);
     _readPos += 4;
     return val;
   }

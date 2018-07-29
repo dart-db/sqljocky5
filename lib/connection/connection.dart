@@ -68,7 +68,7 @@ class MySqlConnection {
     _log.fine("opening connection to ${c.host}:${c.port}/${c.db}");
 
     BufferedSocket socket =
-    await BufferedSocket.connect(c.host, c.port, onDataReady: () {
+        await BufferedSocket.connect(c.host, c.port, onDataReady: () {
       conn?._readPacket();
     }, onDone: () {
       _log.fine("done");
@@ -95,15 +95,13 @@ class MySqlConnection {
     return new MySqlConnection(c.timeout, conn);
   }
 
-  /// Connects a MySQL server at the given [host] on [port], authenticates using [user]
-  /// and [password] and connects to [db].
+  /// Connects to a MySQL server at the given [host] on [port], authenticates
+  /// using [user] and [password] and connects to [db].
   ///
-  /// [timeout] is used as the connection timeout and the default timeout for all socket
-  /// communication.
-  static Future<MySqlConnection> connect(ConnectionSettings c) {
-    // In dart2 this can be replaced with a timeout parameter to connect
-    return _connect(c).timeout(c.timeout);
-  }
+  /// [timeout] is used as the connection timeout and the default timeout for
+  /// all socket communication.
+  static Future<MySqlConnection> connect(ConnectionSettings c) =>
+      _connect(c).timeout(c.timeout);
 
   Future<Results> query(String sql, [List values]) async {
     if (values == null || values.isEmpty) {
@@ -123,7 +121,7 @@ class MySqlConnection {
 
       for (List v in values) {
         var handler =
-        new ExecuteQueryHandler(prepared, false /* executed */, v);
+            new ExecuteQueryHandler(prepared, false /* executed */, v);
         ret.add(await _conn.processHandlerWithResults(handler, _timeout));
       }
     } finally {
