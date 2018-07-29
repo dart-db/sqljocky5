@@ -13,7 +13,7 @@ import '../handlers/ok_packet.dart';
 import 'package:sqljocky5/results/binary_data_packet.dart';
 import 'prepared_query.dart';
 
-import '../results/results_impl.dart';
+import '../results/results.dart';
 import '../results/field.dart';
 import '../results/row.dart';
 import '../query/result_set_header_packet.dart';

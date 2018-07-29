@@ -11,35 +11,6 @@ import 'package:typed_buffer/typed_buffer.dart';
 
 export 'dart:typed_data' show Uint8List;
 
-class _NoResult {
-  const _NoResult();
-}
-
-const _NO_RESULT = const _NoResult();
-
-/**
- * Represents the response from a [_Handler] when [_Handler.processResponse] is
- * called. If the handler has finished processing the response, [finished] is true,
- * [nextHandler] is irrelevant and [result] contains the result to return to the
- * user. If the handler needs another handler to process the response, [finished]
- * is false, [nextHandler] contains the next handler which should process the
- * next packet from the server, and [result] is [_NO_RESULT].
- */
-class HandlerResponse {
-  final bool finished;
-  final Handler nextHandler;
-  final dynamic result;
-
-  bool get hasResult => result != _NO_RESULT;
-
-  HandlerResponse(
-      {this.finished = false,
-      this.nextHandler = null,
-      this.result = _NO_RESULT});
-
-  static final HandlerResponse notFinished = new HandlerResponse();
-}
-
 /**
  * Each command which the mysql protocol implements is handled with a [_Handler] object.
  * A handler is created with the appropriate parameters when the command is invoked
@@ -52,9 +23,7 @@ abstract class Handler {
 
   Handler(this.log);
 
-  /**
-   * Returns a [Buffer] containing the command packet.
-   */
+  /// Constructs and returns a request command packet.
   Uint8List createRequest();
 
   /**
@@ -76,12 +45,10 @@ abstract class Handler {
       [bool prepareStmt = false, bool isHandlingRows = false]) {
     if (response[0] == PACKET_OK && !isHandlingRows) {
       if (prepareStmt) {
-        var okPacket = new PrepareOkPacket(response);
-        log.fine(okPacket.toString());
+        var okPacket = new PrepareOkPacket.fromBuffer(response);
         return okPacket;
       } else {
-        var okPacket = new OkPacket(response);
-        log.fine(okPacket.toString());
+        var okPacket = new OkPacket.fromBuffer(response);
         return okPacket;
       }
     } else if (response[0] == PACKET_ERROR) {
@@ -90,3 +57,32 @@ abstract class Handler {
     return null;
   }
 }
+
+/**
+ * Represents the response from a [_Handler] when [_Handler.processResponse] is
+ * called. If the handler has finished processing the response, [finished] is true,
+ * [nextHandler] is irrelevant and [result] contains the result to return to the
+ * user. If the handler needs another handler to process the response, [finished]
+ * is false, [nextHandler] contains the next handler which should process the
+ * next packet from the server, and [result] is [_NO_RESULT].
+ */
+class HandlerResponse {
+  final bool finished;
+  final Handler nextHandler;
+  final dynamic result;
+
+  bool get hasResult => result != _NO_RESULT;
+
+  HandlerResponse(
+      {this.finished = false,
+        this.nextHandler = null,
+        this.result = _NO_RESULT});
+
+  static final HandlerResponse notFinished = new HandlerResponse();
+}
+
+class _NoResult {
+  const _NoResult();
+}
+
+const _NO_RESULT = const _NoResult();

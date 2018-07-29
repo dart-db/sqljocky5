@@ -13,7 +13,7 @@ import '../handlers/ok_packet.dart';
 
 import '../results/row.dart';
 import '../results/field.dart';
-import '../results/results_impl.dart';
+import '../results/results.dart';
 
 import 'result_set_header_packet.dart';
 import 'package:sqljocky5/results/standard_data_packet.dart';

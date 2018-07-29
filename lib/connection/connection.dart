@@ -1,7 +1,6 @@
 library sqljocky.connection;
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:io';
 
 import '../auth/handshake_handler.dart';
@@ -13,7 +12,7 @@ import '../prepared_statements/close_statement_handler.dart';
 import '../prepared_statements/execute_query_handler.dart';
 import '../prepared_statements/prepare_handler.dart';
 import '../query/query_stream_handler.dart';
-import '../results/row.dart';
+import '../results/results.dart';
 import '../comm/comm.dart';
 import '../common/logging.dart';
 

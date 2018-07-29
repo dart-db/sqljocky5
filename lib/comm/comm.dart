@@ -7,7 +7,7 @@ import 'buffered_socket.dart';
 import '../auth/ssl_handler.dart';
 import 'package:sqljocky5/exceptions/exceptions.dart';
 import '../common/logging.dart';
-import '../results/results_impl.dart';
+import '../results/results.dart';
 import '../results/row.dart';
 import '../auth/handshake_handler.dart';
 
@@ -119,6 +119,20 @@ class Comm {
   }
 
   Future<Results> execHandlerWithResults(Handler handler, Duration timeout) {
+    return pool.withResource(() async {
+      ResultsStream results = await _processHandler(handler).timeout(timeout);
+
+      // Read all of the results. This is so we can close the handler before
+      // returning to the user.
+      // Obviously this is not super efficient but it guarantees correct api use.
+      Results ret = await Results.read(results).timeout(timeout);
+
+      return ret;
+    });
+  }
+
+  Future<Results> execHandlerWithResultsStreamed(
+      Handler handler, Duration timeout) {
     return pool.withResource(() async {
       ResultsStream results = await _processHandler(handler).timeout(timeout);
 

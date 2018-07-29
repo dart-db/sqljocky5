@@ -5,7 +5,7 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 
 import 'field.dart';
-import 'results_impl.dart';
+import 'results.dart';
 
 /// A row of data. Fields can be retrieved by index, or by name.
 ///
@@ -21,24 +21,5 @@ class Row extends DelegatingList<dynamic> {
     if (i == null)
       throw new Exception("Field named $name not found in this row!");
     return this[i];
-  }
-}
-
-class Results extends IterableBase<Row> {
-  final int insertId;
-  final int affectedRows;
-  final List<Field> fields;
-  final List<Row> _rows;
-
-  Results(this._rows, this.fields, this.insertId, this.affectedRows);
-
-  static Future<Results> read(ResultsStream r) async {
-    var rows = await r.toList();
-    return new Results(rows, r.fields, r.insertId, r.affectedRows);
-  }
-
-  @override
-  Iterator<Row> get iterator {
-    return _rows.iterator;
   }
 }

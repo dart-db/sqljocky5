@@ -41,10 +41,10 @@ class AuthHandler extends Handler {
 
       final bytes = new List<int>.from(scrambleBuffer)
         ..addAll(doubleHashedPassword);
-      final hashedSaltedPassword = sha1.convert(bytes).bytes;
+      final List<int> hashedSaltedPassword = sha1.convert(bytes).bytes;
 
       hash = new List<int>(hashedSaltedPassword.length);
-      for (var i = 0; i < hash.length; i++) {
+      for (int i = 0; i < hash.length; i++) {
         hash[i] = hashedSaltedPassword[i] ^ hashedPassword[i];
       }
     }
@@ -53,13 +53,13 @@ class AuthHandler extends Handler {
 
   Uint8List createRequest() {
     // calculate the mysql password hash
-    var hash = getHash();
+    List<int> hash = getHash();
 
-    var encodedUsername = username == null ? [] : utf8.encode(username);
-    var encodedDb;
+    List<int> encodedUsername = username == null ? [] : utf8.encode(username);
+    List<int> encodedDb;
 
-    var size = hash.length + encodedUsername.length + 2 + 32;
-    var clientFlags = this.clientFlags;
+    int size = hash.length + encodedUsername.length + 2 + 32;
+    int clientFlags = this.clientFlags;
     if (db != null) {
       encodedDb = utf8.encode(db);
       size += encodedDb.length + 1;

@@ -14,7 +14,7 @@ class UseDbHandler extends Handler {
   UseDbHandler(String this._dbName) : super(new Logger("UseDbHandler"));
 
   Uint8List createRequest() {
-    var encoded = utf8.encode(_dbName);
+    List<int> encoded = utf8.encode(_dbName);
     var buffer = new FixedWriteBuffer(encoded.length + 1);
     buffer.byte = COM_INIT_DB;
     buffer.writeList(encoded);

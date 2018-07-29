@@ -4,20 +4,20 @@ import 'package:typed_buffer/typed_buffer.dart';
 
 // not using this one yet
 class ParameterPacket {
-  int _type;
-  int _flags;
-  int _decimals;
-  int _length;
+  final int type;
+  final int flags;
+  final int decimals;
+  final int length;
 
-  int get type => _type;
-  int get flags => _flags;
-  int get decimals => _decimals;
-  int get length => _length;
+  ParameterPacket({this.type, this.flags, this.decimals, this.length});
 
-  ParameterPacket(ReadBuffer buffer) {
-    _type = buffer.uint16;
-    _flags = buffer.uint16;
-    _decimals = buffer.byte;
-    _length = buffer.uint32;
+  factory ParameterPacket.fromBuffer(ReadBuffer buffer) {
+    int type = buffer.uint16;
+    int flags = buffer.uint16;
+    int decimals = buffer.byte;
+    int length = buffer.uint32;
+
+    return new ParameterPacket(
+        type: type, flags: flags, decimals: decimals, length: length);
   }
 }
