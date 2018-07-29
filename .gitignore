@@ -4,6 +4,7 @@
 *.iml
 examples
 docs
+.dart_tool
 .packages
 .pub
 packages
