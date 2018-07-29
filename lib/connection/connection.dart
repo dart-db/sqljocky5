@@ -80,8 +80,8 @@ class MySqlConnection {
     rrSocket =
         new ReqRespSocket(socket, handler, handshakeCompleter, c.maxPacketSize);
 
-    await handshakeCompleter.future;
-    return new MySqlConnection(c.timeout, rrSocket);
+    return handshakeCompleter.future
+        .then((_) => new MySqlConnection(c.timeout, rrSocket));
   }
 
   /// Connects to a MySQL server at the given [host] on [port], authenticates

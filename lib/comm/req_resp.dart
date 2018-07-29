@@ -19,6 +19,8 @@ class ReqRespSocket {
   final BufferedSocket _socket;
 
   Handler _handler;
+
+  /// Completes when the handshake is done.
   Completer _completer;
 
   final _largePacketBuffers = <Buffer>[];
@@ -37,11 +39,12 @@ class ReqRespSocket {
   /// Sets the maximum packet size limit
   final int maxPacketSize;
 
-  ReqRespSocket(this._socket, this._handler, Completer handshakeCompleter,
-      this.maxPacketSize)
+  final pool = new Pool(1);
+
+  ReqRespSocket(
+      this._socket, this._handler, this._completer, this.maxPacketSize)
       : _headerBuffer = new Buffer(headerSize),
-        _compressedHeaderBuffer = new Buffer(compressionHeaderSize),
-        _completer = handshakeCompleter;
+        _compressedHeaderBuffer = new Buffer(compressionHeaderSize);
 
   void close() => _socket.close();
 
@@ -208,10 +211,8 @@ class ReqRespSocket {
     return sendBuffer(handler.createRequest());
   }
 
-  /**
-   * Processes a handler, from sending the initial request to handling any packets returned from
-   * mysql
-   */
+  /// Processes a handler, from sending the initial request to handling any
+  /// packets returned from mysql
   Future _processHandler(Handler handler) async {
     if (_handler != null) {
       throw MySqlClientError(
@@ -226,13 +227,8 @@ class ReqRespSocket {
     return _completer.future;
   }
 
-  final Pool pool = new Pool(1);
-
   Future<dynamic> processHandler(Handler handler, Duration timeout) {
-    return pool.withResource(() async {
-      var ret = await _processHandler(handler).timeout(timeout);
-      return ret;
-    });
+    return pool.withResource(() => _processHandler(handler).timeout(timeout));
   }
 
   Future<Results> processHandlerWithResults(Handler handler, Duration timeout) {
@@ -248,9 +244,8 @@ class ReqRespSocket {
   }
 
   Future<void> processHandlerNoResponse(Handler handler, Duration timeout) {
-    return pool.withResource(() {
-      return _processHandlerNoResponse(handler).timeout(timeout);
-    });
+    return pool.withResource(
+        () => _processHandlerNoResponse(handler).timeout(timeout));
   }
 
   static const int headerSize = 4;

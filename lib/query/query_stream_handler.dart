@@ -12,7 +12,7 @@ import '../handlers/handler.dart';
 import '../handlers/ok_packet.dart';
 
 import '../results/row.dart';
-import '../results/field_impl.dart';
+import '../results/field.dart';
 import '../results/results_impl.dart';
 
 import 'result_set_header_packet.dart';
@@ -27,9 +27,9 @@ class QueryStreamHandler extends Handler {
 
   OkPacket _okPacket;
   ResultSetHeaderPacket _resultSetHeaderPacket;
-  final List<FieldImpl> fieldPackets = <FieldImpl>[];
+  final fieldPackets = <Field>[];
 
-  Map<Symbol, int> _fieldIndex;
+  Map<String, int> _fieldIndex;
 
   StreamController<Row> _streamController;
 
@@ -100,16 +100,16 @@ class QueryStreamHandler extends Handler {
   }
 
   _handleFieldPacket(Buffer response) {
-    var fieldPacket = new FieldImpl(response);
+    var fieldPacket = new Field.fromBuffer(response);
     log.fine(fieldPacket.toString());
     fieldPackets.add(fieldPacket);
   }
 
   _handleRowPacket(Buffer response) {
-    var dataPacket =
-        new StandardDataPacket(response, fieldPackets, _fieldIndex);
-    log.fine(dataPacket.toString());
-    _streamController.add(dataPacket);
+    List<dynamic> values = parseStandardDataResponse(response, fieldPackets);
+    var row = new Row(values, _fieldIndex);
+    log.fine(row.toString());
+    _streamController.add(row);
   }
 
   _handleOkPacket(packet) {
@@ -127,13 +127,13 @@ class QueryStreamHandler extends Handler {
             _okPacket.insertId, _okPacket.affectedRows, fieldPackets));
   }
 
-  Map<Symbol, int> createFieldIndex() {
+  Map<String, int> createFieldIndex() {
     var identifierPattern = new RegExp(r'^[a-zA-Z][a-zA-Z0-9_]*$');
-    var fieldIndex = new Map<Symbol, int>();
+    var fieldIndex = new Map<String, int>();
     for (var i = 0; i < fieldPackets.length; i++) {
       var name = fieldPackets[i].name;
       if (identifierPattern.hasMatch(name)) {
-        fieldIndex[new Symbol(name)] = i;
+        fieldIndex[name] = i;
       }
     }
     return fieldIndex;

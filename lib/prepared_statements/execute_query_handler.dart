@@ -14,7 +14,7 @@ import 'binary_data_packet.dart';
 import 'prepared_query.dart';
 
 import '../results/results_impl.dart';
-import '../results/field_impl.dart';
+import '../results/field.dart';
 import '../results/row.dart';
 import '../query/result_set_header_packet.dart';
 import 'package:sqljocky5/results/blob.dart';
@@ -27,8 +27,8 @@ class ExecuteQueryHandler extends Handler {
   int _state = STATE_HEADER_PACKET;
 
   ResultSetHeaderPacket _resultSetHeaderPacket;
-  List<FieldImpl> fieldPackets;
-  Map<Symbol, int> _fieldIndex;
+  List<Field> fieldPackets;
+  Map<String, int> _fieldIndex;
   StreamController<Row> _streamController;
 
   final PreparedQuery _preparedQuery;
@@ -41,7 +41,7 @@ class ExecuteQueryHandler extends Handler {
   ExecuteQueryHandler(
       PreparedQuery this._preparedQuery, bool this._executed, List this._values)
       : super(new Logger("ExecuteQueryHandler")) {
-    fieldPackets = <FieldImpl>[];
+    fieldPackets = <Field>[];
   }
 
   Buffer createRequest() {
@@ -380,25 +380,26 @@ class ExecuteQueryHandler extends Handler {
 
   _handleFieldPacket(Buffer response) {
     log.fine('Got a field packet');
-    var fieldPacket = new FieldImpl(response);
+    var fieldPacket = new Field.fromBuffer(response);
     log.fine(fieldPacket.toString());
     fieldPackets.add(fieldPacket);
   }
 
-  _handleRowPacket(Buffer response) {
+  void _handleRowPacket(Buffer response) {
     log.fine('Got a row packet');
-    var dataPacket = new BinaryDataPacket(response, fieldPackets, _fieldIndex);
+    List<dynamic> values = parseBinaryDataResponse(response, fieldPackets);
+    var dataPacket = new Row(values, _fieldIndex);
     log.fine(dataPacket.toString());
     _streamController.add(dataPacket);
   }
 
-  Map<Symbol, int> createFieldIndex() {
+  Map<String, int> createFieldIndex() {
     var identifierPattern = new RegExp(r'^[a-zA-Z][a-zA-Z0-9_]*$');
-    var fieldIndex = new Map<Symbol, int>();
+    var fieldIndex = <String, int>{};
     for (var i = 0; i < fieldPackets.length; i++) {
       var name = fieldPackets[i].name;
       if (identifierPattern.hasMatch(name)) {
-        fieldIndex[new Symbol(name)] = i;
+        fieldIndex[name] = i;
       }
     }
     return fieldIndex;

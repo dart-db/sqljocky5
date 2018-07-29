@@ -26,17 +26,20 @@ Future<void> createTables(MySqlConnection conn) async {
 
 Future<void> insertRows(MySqlConnection conn) async {
   print("Inserting rows ...");
-  await conn.queryMulti("INSERT INTO people (name, age) VALUES (?, ?)", [
+  List<Results> r1 =
+      await conn.queryMulti("INSERT INTO people (name, age) VALUES (?, ?)", [
     ["Dave", 15],
     ["John", 16],
     ["Mavis", 93],
   ]);
-  await conn.queryMulti(
+  print("People table insert ids: " + r1.map((r) => r.insertId).toString());
+  List<Results> r2 = await conn.queryMulti(
       "INSERT INTO pets (name, species, owner_id) VALUES (?, ?, ?)", [
     ["Rover", "Dog", 1],
     ["Daisy", "Cow", 2],
     ["Spot", "Dog", 2]
   ]);
+  print("Pet table insert ids: " + r2.map((r) => r.insertId).toString());
   print("Rows inserted!");
 }
 
@@ -46,6 +49,7 @@ Future<void> readData(MySqlConnection conn) async {
           'FROM people p '
           'LEFT JOIN pets t ON t.owner_id = p.id');
   print(result);
+  print(result.map((r) => r.byName('name')));
 }
 
 main() async {
