@@ -6,5 +6,4 @@ export 'exceptions/exceptions.dart';
 export 'connection/connection.dart'
     show MySqlConnection, ConnectionSettings, CharacterSet;
 
-export 'results/field.dart';
-export 'results/row.dart';
+export 'results/results.dart';
