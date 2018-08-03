@@ -6,11 +6,10 @@ homepage: https://github.com/dart-db/sqljocky5
 
 authors:
 - James Ots <code@jamesots.com>
-- Faisal Abid <faisal.abid@gmail.com>
 - Ravi Teja Gudapati <tejainece@gmail.com>
 
 environment:
-  sdk: '>=2.0.0-dev.64.0 <3.0.0'
+  sdk: '>=2.0.0-dev.68.0 <3.0.0'
 
 dependencies:
   collection: ^1.1.3

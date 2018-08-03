@@ -73,6 +73,7 @@ main() async {
   await createTables(conn);
   await insertRows(conn);
   await readData(conn);
+  await readData(conn);
 
   await conn.close();
 }

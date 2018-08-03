@@ -8,7 +8,6 @@ import '../auth/ssl_handler.dart';
 import 'package:sqljocky5/exceptions/exceptions.dart';
 import '../common/logging.dart';
 import '../results/results.dart';
-import '../results/row.dart';
 import '../auth/handshake_handler.dart';
 
 import 'common.dart';
@@ -54,10 +53,12 @@ class Comm {
   Future<void> _processReceived(ReadBuffer buffer) async {
     try {
       HandlerResponse response = _handler.processResponse(buffer);
+
       if (_handler is HandshakeHandler) {
         _useCompression = (_handler as HandshakeHandler).useCompression;
         _useSSL = (_handler as HandshakeHandler).useSSL;
       }
+
       if (response.nextHandler != null) {
         // if handler.processResponse() returned a Handler, pass control to that
         // handler now
@@ -77,8 +78,7 @@ class Comm {
 
       if (response.hasResult) {
         if (_completer.isCompleted) {
-          _completer
-              .completeError(new StateError("Request has already completed"));
+          _completer.completeError(StateError("Request has already completed"));
         }
         _completer.complete(response.result);
       }
