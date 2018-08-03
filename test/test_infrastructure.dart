@@ -25,7 +25,7 @@ void initializeTest([String tableName, String createSql, String insertSql]) {
     ConnectionSettings checkSettings = new ConnectionSettings.copy(s);
     checkSettings.db = null;
     final c = await MySqlConnection.connect(checkSettings);
-    await c.query("CREATE DATABASE IF NOT EXISTS ${s.db} CHARACTER SET utf8");
+    await c.execute("CREATE DATABASE IF NOT EXISTS ${s.db} CHARACTER SET utf8");
     await c.close();
 
     _conn = await MySqlConnection.connect(s);

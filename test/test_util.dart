@@ -10,11 +10,11 @@ Future setup(MySqlConnection conn, String tableName, String createSql,
     [String insertSql]) async {
   await new TableDropper(conn, [tableName]).dropTables();
   if (createSql != null) {
-    var result = await conn.query(createSql);
+    var result = await conn.execute(createSql);
     expect(result, isNotNull);
   }
   if (insertSql != null) {
-    await conn.query(insertSql);
+    await conn.execute(insertSql);
   }
 }
 
@@ -39,7 +39,7 @@ class TableDropper {
   Future dropTables() async {
     for (var table in tables) {
       try {
-        await conn.query('drop table $table');
+        await conn.execute('drop table $table');
       } catch (e) {
         if (e is MySqlException &&
             (e as MySqlException).errorNumber == ERROR_UNKNOWN_TABLE) {

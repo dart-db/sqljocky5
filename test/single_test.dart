@@ -19,8 +19,8 @@ void main() {
   initializeTest();
 
   test('connection test', () async {
-    await conn.query("DROP TABLE IF EXISTS t1");
-    await conn.query("CREATE TABLE IF NOT EXISTS t1 (a INT)");
+    await conn.execute("DROP TABLE IF EXISTS t1");
+    await conn.execute("CREATE TABLE IF NOT EXISTS t1 (a INT)");
     var r = await conn.query("INSERT INTO `t1` (a) VALUES (?)", [1]);
 
     r = await conn.query("SELECT * FROM `t1` WHERE a = ?", [1]);
@@ -31,7 +31,7 @@ void main() {
 
     // Drop a table which doesn't exist. This should cause an error.
     try {
-      await conn.query("DROP TABLE doesnotexist");
+      await conn.execute("DROP TABLE doesnotexist");
       expect(true, false); // not reached
     } on MySqlException catch (e) {
       expect(e.errorNumber, 1051);
@@ -45,9 +45,9 @@ void main() {
   test('queued queries test', () async {
     // Even though we do not await these queries they should be queued.
     Future _;
-    _ = conn.query("DROP TABLE IF EXISTS t1");
-    _ = conn.query("CREATE TABLE IF NOT EXISTS t1 (a INT)");
-    Future<Results> f1 = conn.query("SELECT * FROM `t1`");
+    _ = conn.execute("DROP TABLE IF EXISTS t1");
+    _ = conn.execute("CREATE TABLE IF NOT EXISTS t1 (a INT)");
+    Future<Results> f1 = conn.execute("SELECT * FROM `t1`");
 
     _ = conn.query("INSERT INTO `t1` (a) VALUES (?)", [1]);
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import '../handlers/handler.dart';
 import 'package:pool/pool.dart';
@@ -9,6 +10,7 @@ import 'package:sqljocky5/exceptions/exceptions.dart';
 import '../common/logging.dart';
 import '../results/results.dart';
 import '../auth/handshake_handler.dart';
+import '../connection/settings.dart';
 
 import 'common.dart';
 import 'receiver.dart';
@@ -18,27 +20,27 @@ class Comm {
   /// Underlying socket
   final BufferedSocket _socket;
 
+  /// Implements the reception logic
+  final Receiver _receiver;
+
+  /// Implements the transmission logic
+  final Sender _sender;
+
+  final _packetNums = PacketNumber();
+
+  final pool = Pool(1);
+
   Handler _handler;
 
   Completer _completer;
 
-  final _packetNums = PacketNumber();
-
   bool _useCompression = false;
+
   bool _useSSL = false;
 
-  final pool = new Pool(1);
-
-  /// Implements the reception logic
-  Receiver _receiver;
-
-  /// Implements the transmission logic
-  Sender _sender;
-
-  Comm(this._socket, this._handler, this._completer, int maxPacketSize) {
-    _receiver = Receiver(_socket);
-    _sender = Sender(_socket, maxPacketSize);
-  }
+  Comm(this._socket, this._handler, this._completer, int maxPacketSize)
+      : _receiver = Receiver(_socket),
+        _sender = Sender(_socket, maxPacketSize);
 
   void close() => _socket.close();
 
@@ -131,7 +133,7 @@ class Comm {
     });
   }
 
-  Future<StreamedResults> execHandlerWithResultsStreamed(
+  Future<StreamedResults> execHandlerStreamed(
       HandlerWithResult handler, Duration timeout) {
     pool.withResource(() => _processHandler(handler).timeout(timeout));
     return handler.streamedResults;
@@ -159,6 +161,37 @@ class Comm {
       if (!_completer.isCompleted) _completer.completeError(e, st);
     }
     if (!keepOpen) close();
+  }
+
+  static Future<Comm> connect(ConnectionSettings c) async {
+    assert(!c.useSSL); // Not implemented
+    assert(!c.useCompression);
+
+    Comm comm;
+    final handshakeCompleter = Completer();
+
+    final socket = await BufferedSocket.connect(c.host, c.port,
+        onDataReady: () => comm?.readPacket(),
+        onError: (error) {
+          // If conn has not been connected there was a connection error.
+          if (comm == null) {
+            handshakeCompleter.completeError(error);
+          } else {
+            comm.forwardError(error);
+          }
+        },
+        onClosed: () {
+          comm.forwardError(new SocketException.closed());
+        });
+
+    var handler = HandshakeHandler(c.user, c.password, c.maxPacketSize,
+        c.characterSet, c.db, c.useCompression, c.useSSL);
+
+    comm = Comm(socket, handler, handshakeCompleter, c.maxPacketSize);
+
+    await handshakeCompleter.future;
+
+    return comm;
   }
 
   static const int statePacketHeader = 0;

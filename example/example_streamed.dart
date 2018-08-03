@@ -5,17 +5,17 @@ import 'dart:async';
 /// Drops the tables if they already exist
 Future<void> dropTables(MySqlConnection conn) async {
   print("Dropping tables ...");
-  await conn.query("DROP TABLE IF EXISTS pets, people");
+  await conn.execute("DROP TABLE IF EXISTS pets, people");
   print("Dropped tables!");
 }
 
 Future<void> createTables(MySqlConnection conn) async {
   print("Creating tables ...");
-  await conn.query('CREATE TABLE people (id INTEGER NOT NULL auto_increment, '
+  await conn.execute('CREATE TABLE people (id INTEGER NOT NULL auto_increment, '
       'name VARCHAR(255), '
       'age INTEGER, '
       'PRIMARY KEY (id))');
-  await conn.query('CREATE TABLE pets (id INTEGER NOT NULL auto_increment, '
+  await conn.execute('CREATE TABLE pets (id INTEGER NOT NULL auto_increment, '
       'name VARCHAR(255), '
       'species TEXT, '
       'owner_id INTEGER, '
@@ -45,10 +45,10 @@ Future<void> insertRows(MySqlConnection conn) async {
 
 Future<void> readData(MySqlConnection conn) async {
   StreamedResults result = await conn
-      .queryStreamed('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
+      .executeStreamed('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
           'FROM people p '
           'LEFT JOIN pets t ON t.owner_id = p.id');
-  await for(Row r in result) {
+  await for (Row r in result) {
     print(r.byName('name'));
   }
 }

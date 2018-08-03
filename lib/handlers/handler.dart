@@ -63,7 +63,7 @@ abstract class Handler {
 abstract class HandlerWithResult extends Handler {
   Future<StreamedResults> get streamedResults;
 
-  HandlerWithResult(Logger log): super(log);
+  HandlerWithResult(Logger log) : super(log);
 }
 
 /**
@@ -83,8 +83,8 @@ class HandlerResponse {
 
   HandlerResponse(
       {this.finished = false,
-        this.nextHandler = null,
-        this.result = _NO_RESULT});
+      this.nextHandler = null,
+      this.result = _NO_RESULT});
 
   static final HandlerResponse notFinished = new HandlerResponse();
 }

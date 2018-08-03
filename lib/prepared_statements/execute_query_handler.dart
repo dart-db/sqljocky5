@@ -315,8 +315,8 @@ class ExecuteQueryHandler extends HandlerWithResult {
     } else if (packet is OkPacket) {
       _okPacket = packet;
       if ((packet.serverStatus & SERVER_MORE_RESULTS_EXISTS) == 0) {
-        var stream =
-            new StreamedResults(_okPacket.insertId, _okPacket.affectedRows, null);
+        var stream = new StreamedResults(
+            _okPacket.insertId, _okPacket.affectedRows, null);
         _resultsCompleter.complete(stream);
         return new HandlerResponse(finished: true, result: stream);
       }
