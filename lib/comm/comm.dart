@@ -28,6 +28,7 @@ class Comm {
 
   final _packetNums = PacketNumber();
 
+  /// Used to make sure that only one request is active at any given time.
   final pool = Pool(1);
 
   Handler _handler;
