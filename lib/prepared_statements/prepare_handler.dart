@@ -2,7 +2,6 @@ library sqljocky.prepare_handler;
 
 import 'dart:convert';
 
-import 'package:logging/logging.dart';
 import 'package:typed_buffer/typed_buffer.dart';
 
 import 'package:sqljocky5/constants.dart';
@@ -27,7 +26,7 @@ class PrepareHandler extends Handler {
   List<Field> get parameters => _parameters;
   List<Field> get columns => _columns;
 
-  PrepareHandler(String this.sql) : super(new Logger("PrepareHandler"));
+  PrepareHandler(this.sql);
 
   Uint8List createRequest() {
     List<int> encoded = utf8.encode(sql);
@@ -38,40 +37,33 @@ class PrepareHandler extends Handler {
   }
 
   HandlerResponse processResponse(ReadBuffer response) {
-    log.fine("Prepare processing response");
     var packet = checkResponse(response, true);
     if (packet == null) {
-      log.fine('Not an OK packet, params to read: $_parametersToRead');
       if (_parametersToRead > -1) {
         if (response[0] == PACKET_EOF) {
-          log.fine("EOF");
           if (_parametersToRead != 0) {
             throw MySqlProtocolError(
                 "Unexpected EOF packet; was expecting another $_parametersToRead parameter(s)");
           }
         } else {
           var fieldPacket = new Field.fromBuffer(response);
-          log.fine("field packet: $fieldPacket");
           _parameters[_okPacket.parameterCount - _parametersToRead] =
               fieldPacket;
         }
         _parametersToRead--;
       } else if (_columnsToRead > -1) {
         if (response[0] == PACKET_EOF) {
-          log.fine("EOF");
           if (_columnsToRead != 0) {
             throw MySqlProtocolError(
                 "Unexpected EOF packet; was expecting another $_columnsToRead column(s)");
           }
         } else {
           var fieldPacket = new Field.fromBuffer(response);
-          log.fine("field packet (column): $fieldPacket");
           _columns[_okPacket.columnCount - _columnsToRead] = fieldPacket;
         }
         _columnsToRead--;
       }
     } else if (packet is PrepareOkPacket) {
-      log.fine(packet.toString());
       _okPacket = packet;
       _parametersToRead = packet.parameterCount;
       _columnsToRead = packet.columnCount;
@@ -86,10 +78,8 @@ class PrepareHandler extends Handler {
     }
 
     if (_parametersToRead == -1 && _columnsToRead == -1) {
-      log.fine("finished");
-      return new HandlerResponse(
-          finished: true, result: new PreparedQuery(this));
+      return HandlerResponse(result: PreparedQuery(this));
     }
-    return HandlerResponse.notFinished;
+    return HandlerResponse();
   }
 }

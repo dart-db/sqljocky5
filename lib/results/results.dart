@@ -9,6 +9,8 @@ import 'row.dart';
 export 'field.dart';
 export 'row.dart';
 
+Future<Results> deStream(StreamedResults sr) => Results.read(sr);
+
 class Results extends IterableBase<Row> {
   final int insertId;
   final int affectedRows;
@@ -47,6 +49,8 @@ class StreamedResults extends StreamView<Row> {
           insertId, affectedRows, fields, newStream);
     }
   }
+
+  Future<Results> deStream() => Results.read(this);
 
   StreamedResults._fromStream(
       this.insertId, this.affectedRows, List<Field> fields, Stream<Row> stream)

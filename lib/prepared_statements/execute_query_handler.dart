@@ -3,8 +3,6 @@ library sqljocky.execute_query_handler;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:logging/logging.dart';
-
 import 'package:sqljocky5/constants.dart';
 import 'package:typed_buffer/typed_buffer.dart';
 import '../handlers/handler.dart';
@@ -37,8 +35,7 @@ class ExecuteQueryHandler extends HandlerWithResult {
   final _resultsCompleter = Completer<StreamedResults>();
 
   ExecuteQueryHandler(
-      this.preparedQuery, bool this._executed, List this._values)
-      : super(new Logger("ExecuteQueryHandler")) {
+      this.preparedQuery, bool this._executed, List this._values) {
     fieldPackets = <Field>[];
   }
 
@@ -185,7 +182,6 @@ class ExecuteQueryHandler extends HandlerWithResult {
 
   void _writeDateTime(value, preparedValue, FixedWriteBuffer buffer) {
     // TODO remove Date eventually
-    log.fine("DATE: $value");
     buffer.byte = 7;
     buffer.byte = value.year >> 0x00 & 0xFF;
     buffer.byte = value.year >> 0x08 & 0xFF;
@@ -286,14 +282,13 @@ class ExecuteQueryHandler extends HandlerWithResult {
     var packet;
     if (_cancelled) {
       _streamController.close();
-      return new HandlerResponse(finished: true);
+      return HandlerResponse(result: null);
     }
     if (_state == STATE_HEADER_PACKET) {
       packet = checkResponse(response);
     }
     if (packet == null) {
       if (response[0] == PACKET_EOF) {
-        log.fine('Got an EOF');
         if (_state == STATE_FIELD_PACKETS) {
           return _handleEndOfFields();
         } else if (_state == STATE_ROW_PACKETS) {
@@ -318,10 +313,10 @@ class ExecuteQueryHandler extends HandlerWithResult {
         var stream = new StreamedResults(
             _okPacket.insertId, _okPacket.affectedRows, null);
         _resultsCompleter.complete(stream);
-        return new HandlerResponse(finished: true, result: stream);
+        return HandlerResponse(result: stream);
       }
     }
-    return HandlerResponse.notFinished;
+    return HandlerResponse();
   }
 
   HandlerResponse _handleEndOfFields() {
@@ -331,15 +326,15 @@ class ExecuteQueryHandler extends HandlerWithResult {
       _cancelled = true;
     };
     this._fieldIndex = createFieldIndex();
-    var stream = new StreamedResults(null, null, fieldPackets,
+    var stream = StreamedResults(null, null, fieldPackets,
         stream: _streamController.stream);
     _resultsCompleter.complete(stream);
-    return new HandlerResponse(result: stream);
+    return HandlerResponse();
   }
 
   HandlerResponse _handleEndOfRows() {
     _streamController.close();
-    return new HandlerResponse(finished: true);
+    return new HandlerResponse(result: _streamController.stream);
   }
 
   _handleHeaderPacket(ReadBuffer response) {

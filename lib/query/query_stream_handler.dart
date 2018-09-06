@@ -3,8 +3,6 @@ library sqljocky.query_stream_handler;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:logging/logging.dart';
-
 import 'package:sqljocky5/constants.dart';
 import 'package:typed_buffer/typed_buffer.dart';
 
@@ -23,7 +21,7 @@ class QueryStreamHandler extends HandlerWithResult {
   int _state = stateHeaderPacket;
 
   OkPacket _okPacket;
-  ResultSetHeaderPacket _resultSetHeaderPacket;
+  // TODO ResultSetHeaderPacket _resultSetHeaderPacket;
   final fieldPackets = <Field>[];
 
   Map<String, int> _fieldIndex;
@@ -32,7 +30,7 @@ class QueryStreamHandler extends HandlerWithResult {
 
   final _resultsCompleter = Completer<StreamedResults>();
 
-  QueryStreamHandler(String this.sql) : super(new Logger("QueryStreamHandler"));
+  QueryStreamHandler(this.sql);
 
   Uint8List createRequest() {
     var encoded = utf8.encode(sql);
@@ -43,7 +41,6 @@ class QueryStreamHandler extends HandlerWithResult {
   }
 
   HandlerResponse processResponse(ReadBuffer response) {
-    log.fine("Processing query response");
     var packet = checkResponse(response, false, _state == stateRowPacket);
     if (packet == null) {
       if (response[0] == PACKET_EOF) {
@@ -68,7 +65,7 @@ class QueryStreamHandler extends HandlerWithResult {
     } else if (packet is OkPacket) {
       return _handleOkPacket(packet);
     }
-    return HandlerResponse.notFinished;
+    return HandlerResponse();
   }
 
   @override
@@ -76,57 +73,53 @@ class QueryStreamHandler extends HandlerWithResult {
 
   _handleEndOfFields() {
     _state = stateRowPacket;
-    _streamController = new StreamController<Row>(onCancel: () {
+    _streamController = StreamController<Row>(onCancel: () {
       _streamController.close();
     });
     this._fieldIndex = createFieldIndex();
-    var stream = new StreamedResults(null, null, fieldPackets,
+    var stream = StreamedResults(null, null, fieldPackets,
         stream: _streamController.stream);
     _resultsCompleter.complete(stream);
-    return new HandlerResponse(result: stream);
+    return HandlerResponse();
   }
 
   _handleEndOfRows() {
-    // the connection's _handler field needs to have been nulled out before the stream is closed,
-    // otherwise the stream will be reused in an unfinished state.
-    // TODO: can we use Future.delayed elsewhere, to make reusing connections nicer?
-    //    new Future.delayed(new Duration(seconds: 0), _streamController.close);
+    // the connection's _handler field needs to have been nulled out before
+    // the stream is closed, otherwise the stream will be reused in an
+    // unfinished state.
     _streamController.close();
-    return new HandlerResponse(finished: true);
+    return HandlerResponse(result: _streamController.stream);
   }
 
   _handleHeaderPacket(ReadBuffer response) {
-    _resultSetHeaderPacket = new ResultSetHeaderPacket.fromBuffer(response);
-    log.fine(_resultSetHeaderPacket.toString());
+    // TODO _resultSetHeaderPacket = ResultSetHeaderPacket.fromBuffer(response);
     _state = stateFieldPacket;
   }
 
   _handleFieldPacket(ReadBuffer response) {
-    var fieldPacket = new Field.fromBuffer(response);
-    log.fine(fieldPacket.toString());
+    var fieldPacket = Field.fromBuffer(response);
     fieldPackets.add(fieldPacket);
   }
 
   _handleRowPacket(ReadBuffer response) {
     List<dynamic> values = parseStandardDataResponse(response, fieldPackets);
-    var row = new Row(values, _fieldIndex);
-    log.fine(row.toString());
+    var row = Row(values, _fieldIndex);
     _streamController.add(row);
   }
 
   _handleOkPacket(packet) {
     _okPacket = packet;
-    var finished = false;
-    // TODO: I think this is to do with multiple queries. Will probably break.
-    if ((packet.serverStatus & SERVER_MORE_RESULTS_EXISTS) == 0) {
-      finished = true;
+
+    if ((packet.serverStatus & SERVER_MORE_RESULTS_EXISTS) != 0) {
+      // TODO: I think this is to do with multiple queries. Will probably break.
+      throw UnsupportedError("Not implemented!");
     }
 
     //TODO is this finished value right?
-    var stream = new StreamedResults(
+    var stream = StreamedResults(
         _okPacket.insertId, _okPacket.affectedRows, fieldPackets);
     _resultsCompleter.complete(stream);
-    return new HandlerResponse(finished: finished, result: stream);
+    return HandlerResponse(result: stream);
   }
 
   Map<String, int> createFieldIndex() {

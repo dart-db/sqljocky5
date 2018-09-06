@@ -10,15 +10,12 @@ import 'impl.dart';
 export 'settings.dart';
 
 abstract class Querier {
-  Future<Results> execute(String sql);
+  Future<StreamedResults> execute(String sql);
 
-  Future<StreamedResults> executeStreamed(String sql);
+  Future<StreamedResults> prepared(String sql, Iterable values);
 
-  Future<Results> prepared(String sql, Iterable values);
-
-  Future<StreamedResults> preparedStreamed(String sql, Iterable values);
-
-  Future<List<Results>> preparedMulti(String sql, Iterable<Iterable> values);
+  Future<Stream<StreamedResults>> preparedWithAll(
+      String sql, Iterable<Iterable> values);
 
   Future<Prepared> prepare(String sql);
 }
@@ -43,19 +40,14 @@ class Transaction implements Querier {
   final MySqlConnection _conn;
   Transaction._(this._conn);
 
-  Future<Results> execute(String sql) => _conn.execute(sql);
+  Future<StreamedResults> execute(String sql) => _conn.execute(sql);
 
-  Future<StreamedResults> executeStreamed(String sql) =>
-      _conn.executeStreamed(sql);
-
-  Future<Results> prepared(String sql, Iterable values) =>
+  Future<StreamedResults> prepared(String sql, Iterable values) =>
       _conn.prepared(sql, values);
 
-  Future<StreamedResults> preparedStreamed(String sql, Iterable values) =>
-      _conn.preparedStreamed(sql, values);
-
-  Future<List<Results>> preparedMulti(String sql, Iterable<Iterable> values) =>
-      _conn.preparedMulti(sql, values);
+  Future<Stream<StreamedResults>> preparedWithAll(
+          String sql, Iterable<Iterable> values) =>
+      _conn.preparedWithAll(sql, values);
 
   Future<Prepared> prepare(String sql) => _conn.prepare(sql);
 
@@ -73,9 +65,8 @@ class Transaction implements Querier {
 class RollbackError {}
 
 class Prepared {
-  Future<Results> execute(Iterable values) => throw UnimplementedError();
-  Future<StreamedResults> executeStreamed(Iterable values) =>
+  Future<StreamedResults> execute(Iterable values) =>
       throw UnimplementedError();
-  Future<Results> executeMulti(Iterable<Iterable> values) =>
+  Future<Results> executeAll(Iterable<Iterable> values) =>
       throw UnimplementedError();
 }

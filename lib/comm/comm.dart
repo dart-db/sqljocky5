@@ -2,12 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import '../handlers/handler.dart';
-import 'package:pool/pool.dart';
+import 'task_queue.dart';
 import 'package:typed_buffer/typed_buffer.dart';
 import 'buffered_socket.dart';
 import '../auth/ssl_handler.dart';
 import 'package:sqljocky5/exceptions/exceptions.dart';
-import '../common/logging.dart';
 import '../results/results.dart';
 import '../auth/handshake_handler.dart';
 import '../connection/settings.dart';
@@ -28,8 +27,7 @@ class Comm {
 
   final _packetNums = PacketNumber();
 
-  /// Used to make sure that only one request is active at any given time.
-  final pool = Pool(1);
+  final _queue = TaskQueue();
 
   Handler _handler;
 
@@ -77,18 +75,15 @@ class Comm {
         }
       }
 
-      if (response.finished) _finishAndReuse();
-
-      if (response.hasResult) {
-        if (_completer.isCompleted) {
-          _completer.completeError(StateError("Request has already completed"));
-        }
+      if (response.hasFinished) {
+        _finishAndReuse();
+        if (_completer.isCompleted)
+          _completer.completeError(StateError("Already completed!"));
         _completer.complete(response.result);
       }
     } on MySqlException catch (e, st) {
       // This clause means mysql returned an error on the wire. It is not a fatal error
       // and the connection can stay open.
-      logger.fine("Completing with MySqlException: $e");
       _finishAndReuse();
       forwardError(e, st: st, keepOpen: true);
     } catch (e, st) {
@@ -97,7 +92,10 @@ class Comm {
     }
   }
 
-  void _finishAndReuse() => _handler = null;
+  void _finishAndReuse() {
+    _handler = null;
+    // stdout.write("Finished!");
+  }
 
   /// Processes a handler, from sending the initial request to handling any
   /// packets returned from mysql
@@ -106,7 +104,8 @@ class Comm {
       throw MySqlClientError(
           "Connection cannot process a request for $handler while a request is already in progress for $_handler");
     }
-    _completer = new Completer<dynamic>();
+    var myCompleter = Completer<dynamic>();
+    _completer = myCompleter;
     _handler = handler;
 
     _packetNums.reset();
@@ -116,28 +115,19 @@ class Comm {
     return _completer.future;
   }
 
-  Future<dynamic> execHandler(Handler handler, Duration timeout) {
-    return pool.withResource(() => _processHandler(handler).timeout(timeout));
-  }
+  Future<dynamic> execHandler(Handler handler, Duration timeout) =>
+      _queue.run(() => _processHandler(handler).timeout(timeout));
 
-  Future<Results> execHandlerWithResults(
-      HandlerWithResult handler, Duration timeout) {
-    return pool.withResource(() async {
-      StreamedResults results = await _processHandler(handler).timeout(timeout);
-
-      // Read all of the results. This is so we can close the handler before
-      // returning to the user.
-      // Obviously this is not super efficient but it guarantees correct api use.
-      Results ret = await Results.read(results).timeout(timeout);
-
-      return ret;
+  Future<StreamedResults> execResultHandler(
+      HandlerWithResult handler, Duration timeout) async {
+    var completer = Completer<StreamedResults>();
+    _queue
+        .run(() => _processHandler(handler).timeout(timeout))
+        .catchError((e, st) {
+      completer.completeError(e, st);
     });
-  }
-
-  Future<StreamedResults> execHandlerStreamed(
-      HandlerWithResult handler, Duration timeout) {
-    pool.withResource(() => _processHandler(handler).timeout(timeout));
-    return handler.streamedResults;
+    handler.streamedResults.then((sr) => completer.complete(sr));
+    return completer.future;
   }
 
   /// This method just sends the handler data.
@@ -152,8 +142,7 @@ class Comm {
   }
 
   Future<void> execHandlerNoResponse(Handler handler, Duration timeout) {
-    return pool
-        .withResource(() => _execHandlerNoResponse(handler).timeout(timeout));
+    return _queue.run(() => _execHandlerNoResponse(handler).timeout(timeout));
   }
 
   /// Forwards error

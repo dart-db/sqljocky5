@@ -3,7 +3,6 @@ library sqljocky.auth_handler;
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
 import 'package:typed_buffer/typed_buffer.dart';
@@ -27,9 +26,7 @@ class AuthHandler extends Handler {
       int this.clientFlags,
       int this.maxPacketSize,
       int this.characterSet,
-      {bool ssl = false})
-      : /*this._ssl = false,*/
-        super(new Logger("AuthHandler"));
+      {bool ssl = false});
 
   List<int> getHash() {
     List<int> hash;

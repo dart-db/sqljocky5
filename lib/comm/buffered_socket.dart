@@ -5,7 +5,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:typed_buffer/typed_buffer.dart';
 
-typedef ErrorHandler(AsyncError err);
+typedef ErrorHandler(err);
 typedef DoneHandler();
 typedef DataReadyHandler();
 typedef ClosedHandler();

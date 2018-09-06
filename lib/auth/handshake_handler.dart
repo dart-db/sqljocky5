@@ -2,8 +2,6 @@ library sqljocky.handshake_handler;
 
 import 'dart:math' as math;
 
-import 'package:logging/logging.dart';
-
 import 'package:typed_buffer/typed_buffer.dart';
 import '../handlers/handler.dart';
 import 'package:sqljocky5/exceptions/client_error.dart';
@@ -37,8 +35,7 @@ class HandshakeHandler extends Handler {
       [String db, bool useCompression, bool useSSL])
       : _db = db,
         this.useCompression = useCompression,
-        this.useSSL = useSSL,
-        super(new Logger("HandshakeHandler"));
+        this.useSSL = useSSL;
 
   /**
    * The server initiates the handshake after the client connects,
@@ -125,22 +122,20 @@ class HandshakeHandler extends Handler {
         CLIENT_SECURE_CONNECTION;
 
     if (useCompression && (serverCapabilities & CLIENT_COMPRESS) != 0) {
-      log.shout("Compression enabled");
       clientFlags |= CLIENT_COMPRESS;
     } else {
       useCompression = false;
     }
 
     if (useSSL && (serverCapabilities & CLIENT_SSL) != 0) {
-      log.shout("SSL enabled");
       clientFlags |= CLIENT_SSL | CLIENT_SECURE_CONNECTION;
     } else {
       useSSL = false;
     }
 
     if (useSSL) {
-      return new HandlerResponse(
-          nextHandler: new SSLHandler(
+      return HandlerResponse(
+          nextHandler: SSLHandler(
               clientFlags,
               _maxPacketSize,
               _characterSet,
@@ -155,8 +150,8 @@ class HandshakeHandler extends Handler {
               )));
     }
 
-    return new HandlerResponse(
-        nextHandler: new AuthHandler(_user, _password, _db, scrambleBuffer,
+    return HandlerResponse(
+        nextHandler: AuthHandler(_user, _password, _db, scrambleBuffer,
             clientFlags, _maxPacketSize, _characterSet));
   }
 }

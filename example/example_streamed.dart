@@ -25,26 +25,28 @@ Future<void> createTables(MySqlConnection conn) async {
 
 Future<void> insertRows(MySqlConnection conn) async {
   print("Inserting rows ...");
-  List<Results> r1 =
-      await conn.preparedMulti("INSERT INTO people (name, age) VALUES (?, ?)", [
+  List<StreamedResults> r1 = await (await conn
+          .preparedWithAll("INSERT INTO people (name, age) VALUES (?, ?)", [
     ["Dave", 15],
     ["John", 16],
     ["Mavis", 93],
-  ]);
+  ]))
+      .toList();
   print("People table insert ids: " + r1.map((r) => r.insertId).toString());
-  List<Results> r2 = await conn.preparedMulti(
-      "INSERT INTO pets (name, species, owner_id) VALUES (?, ?, ?)", [
+  List<StreamedResults> r2 = await (await conn.preparedWithAll(
+          "INSERT INTO pets (name, species, owner_id) VALUES (?, ?, ?)", [
     ["Rover", "Dog", 1],
     ["Daisy", "Cow", 2],
     ["Spot", "Dog", 2]
-  ]);
+  ]))
+      .toList();
   print("Pet table insert ids: " + r2.map((r) => r.insertId).toString());
   print("Rows inserted!");
 }
 
 Future<void> readData(MySqlConnection conn) async {
-  StreamedResults result = await conn
-      .executeStreamed('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
+  StreamedResults result =
+      await conn.execute('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
           'FROM people p '
           'LEFT JOIN pets t ON t.owner_id = p.id');
   await for (Row r in result) {

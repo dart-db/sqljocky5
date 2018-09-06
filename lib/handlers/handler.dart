@@ -2,7 +2,6 @@ library sqljocky.handler;
 
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
 import 'package:sqljocky5/exceptions/exceptions.dart';
@@ -21,10 +20,6 @@ export 'dart:typed_data' show Uint8List;
  * the mysql server, either synchronously or asynchronously.
  */
 abstract class Handler {
-  final Logger log;
-
-  Handler(this.log);
-
   /// Constructs and returns a request command packet.
   Uint8List createRequest();
 
@@ -35,7 +30,7 @@ abstract class Handler {
    * a result which is obtained by calling [checkResponse]
    */
   HandlerResponse processResponse(ReadBuffer response) =>
-      new HandlerResponse(finished: true, result: checkResponse(response));
+      HandlerResponse(result: checkResponse(response));
 
   /**
    * Parses the response packet to recognise Ok and Error packets.
@@ -47,10 +42,10 @@ abstract class Handler {
       [bool prepareStmt = false, bool isHandlingRows = false]) {
     if (response[0] == PACKET_OK && !isHandlingRows) {
       if (prepareStmt) {
-        var okPacket = new PrepareOkPacket.fromBuffer(response);
+        var okPacket = PrepareOkPacket.fromBuffer(response);
         return okPacket;
       } else {
-        var okPacket = new OkPacket.fromBuffer(response);
+        var okPacket = OkPacket.fromBuffer(response);
         return okPacket;
       }
     } else if (response[0] == PACKET_ERROR) {
@@ -62,8 +57,6 @@ abstract class Handler {
 
 abstract class HandlerWithResult extends Handler {
   Future<StreamedResults> get streamedResults;
-
-  HandlerWithResult(Logger log) : super(log);
 }
 
 /**
@@ -75,18 +68,11 @@ abstract class HandlerWithResult extends Handler {
  * next packet from the server, and [result] is [_NO_RESULT].
  */
 class HandlerResponse {
-  final bool finished;
   final Handler nextHandler;
   final dynamic result;
+  bool get hasFinished => result != _NO_RESULT;
 
-  bool get hasResult => result != _NO_RESULT;
-
-  HandlerResponse(
-      {this.finished = false,
-      this.nextHandler = null,
-      this.result = _NO_RESULT});
-
-  static final HandlerResponse notFinished = new HandlerResponse();
+  HandlerResponse({this.nextHandler = null, this.result = _NO_RESULT});
 }
 
 class _NoResult {

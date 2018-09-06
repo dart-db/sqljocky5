@@ -19,33 +19,15 @@ class MySqlConnectionImpl implements MySqlConnection {
 
   MySqlConnectionImpl(this._timeout, this._socket);
 
-  Future<Results> execute(String sql) =>
-      _socket.execHandlerWithResults(QueryStreamHandler(sql), _timeout);
+  Future<StreamedResults> execute(String sql) =>
+      _socket.execResultHandler(QueryStreamHandler(sql), _timeout);
 
-  Future<StreamedResults> executeStreamed(String sql) =>
-      _socket.execHandlerStreamed(QueryStreamHandler(sql), _timeout);
-
-  Future<Results> prepared(String sql, [Iterable values]) async {
+  Future<StreamedResults> prepared(String sql, Iterable values) async {
     PreparedQuery prepared;
     try {
       prepared = await _socket.execHandler(PrepareHandler(sql), _timeout);
       var handler = ExecuteQueryHandler(prepared, false, values);
-      return _socket.execHandlerWithResults(handler, _timeout);
-    } catch (e) {
-      if (prepared != null) {
-        _socket.execHandlerNoResponse(
-            CloseStatementHandler(prepared.statementHandlerId), _timeout);
-      }
-      rethrow;
-    }
-  }
-
-  Future<StreamedResults> preparedStreamed(String sql, Iterable values) async {
-    PreparedQuery prepared;
-    try {
-      prepared = await _socket.execHandler(new PrepareHandler(sql), _timeout);
-      var handler = new ExecuteQueryHandler(prepared, false, values);
-      return _socket.execHandlerStreamed(handler, _timeout);
+      return _socket.execResultHandler(handler, _timeout);
     } catch (e) {
       if (prepared != null) {
         await _socket.execHandlerNoResponse(
@@ -55,25 +37,28 @@ class MySqlConnectionImpl implements MySqlConnection {
     }
   }
 
-  Future<List<Results>> preparedMulti(
+  Future<Stream<StreamedResults>> preparedWithAll(
       String sql, Iterable<Iterable> values) async {
-    PreparedQuery prepared;
-    var ret = List<Results>()..length = values.length;
-    try {
-      prepared = await _socket.execHandler(new PrepareHandler(sql), _timeout);
-      for (int i = 0; i < values.length; i++) {
-        Iterable v = values.elementAt(i);
-        var handler = new ExecuteQueryHandler(prepared, false, v);
-        ret[i] = await _socket.execHandlerWithResults(handler, _timeout);
+    var controller = StreamController<StreamedResults>();
+    PreparedQuery prepared =
+        await _socket.execHandler(PrepareHandler(sql), _timeout);
+    Future.microtask(() async {
+      try {
+        for (int i = 0; i < values.length; i++) {
+          Iterable v = values.elementAt(i);
+          var handler = ExecuteQueryHandler(prepared, false, v);
+          controller.add(await _socket.execResultHandler(handler, _timeout));
+        }
+      } catch (e) {
+        controller.addError(e);
+        if (prepared != null) {
+          _socket.execHandlerNoResponse(
+              CloseStatementHandler(prepared.statementHandlerId), _timeout);
+        }
+        rethrow;
       }
-      return ret;
-    } catch (e) {
-      if (prepared != null) {
-        _socket.execHandlerNoResponse(
-            new CloseStatementHandler(prepared.statementHandlerId), _timeout);
-      }
-      rethrow;
-    }
+    });
+    return controller.stream;
   }
 
   @override
@@ -103,7 +88,7 @@ class MySqlConnectionImpl implements MySqlConnection {
     // TODO peacefully close the current handler!
 
     try {
-      await _socket.execHandlerNoResponse(new QuitHandler(), _timeout);
+      await _socket.execHandlerNoResponse(QuitHandler(), _timeout);
     } catch (e) {}
 
     _socket.close();
