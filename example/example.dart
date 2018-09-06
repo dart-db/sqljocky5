@@ -26,13 +26,13 @@ Future<void> createTables(MySqlConnection conn) async {
 Future<void> insertRows(MySqlConnection conn) async {
   print("Inserting rows ...");
   List<Results> r1 =
-      await conn.queryMulti("INSERT INTO people (name, age) VALUES (?, ?)", [
+      await conn.preparedMulti("INSERT INTO people (name, age) VALUES (?, ?)", [
     ["Dave", 15],
     ["John", 16],
     ["Mavis", 93],
   ]);
   print("People table insert ids: " + r1.map((r) => r.insertId).toString());
-  List<Results> r2 = await conn.queryMulti(
+  List<Results> r2 = await conn.preparedMulti(
       "INSERT INTO pets (name, species, owner_id) VALUES (?, ?, ?)", [
     ["Rover", "Dog", 1],
     ["Daisy", "Cow", 2],

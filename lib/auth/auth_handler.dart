@@ -27,7 +27,7 @@ class AuthHandler extends Handler {
       int this.clientFlags,
       int this.maxPacketSize,
       int this.characterSet,
-      {bool ssl: false})
+      {bool ssl = false})
       : /*this._ssl = false,*/
         super(new Logger("AuthHandler"));
 

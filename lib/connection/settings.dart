@@ -17,16 +17,16 @@ class ConnectionSettings {
   Duration timeout;
 
   ConnectionSettings(
-      {String this.host: 'localhost',
-      int this.port: 3306,
+      {String this.host = 'localhost',
+      int this.port = 3306,
       String this.user,
       String this.password,
       String this.db,
-      bool this.useCompression: false,
-      bool this.useSSL: false,
-      int this.maxPacketSize: 16 * 1024 * 1024,
-      Duration this.timeout: const Duration(seconds: 30),
-      int this.characterSet: CharacterSet.UTF8MB4});
+      bool this.useCompression = false,
+      bool this.useSSL = false,
+      int this.maxPacketSize = 16 * 1024 * 1024,
+      Duration this.timeout = const Duration(seconds: 30),
+      int this.characterSet = CharacterSet.UTF8MB4});
 
   ConnectionSettings.copy(ConnectionSettings o) {
     host = o.host;

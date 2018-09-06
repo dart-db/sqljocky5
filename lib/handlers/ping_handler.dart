@@ -3,7 +3,6 @@ library sqljocky.ping_handler;
 import 'package:logging/logging.dart';
 
 import 'package:sqljocky5/constants.dart';
-import 'package:typed_buffer/typed_buffer.dart';
 import 'handler.dart';
 
 class PingHandler extends Handler {

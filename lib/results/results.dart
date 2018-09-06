@@ -19,7 +19,7 @@ class Results extends IterableBase<Row> {
 
   static Future<Results> read(StreamedResults r) async {
     var rows = await r.toList();
-    return new Results(rows, r.fields, r.insertId, r.affectedRows);
+    return Results(rows, r.fields, r.insertId, r.affectedRows);
   }
 
   @override

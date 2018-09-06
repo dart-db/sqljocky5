@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:logging/logging.dart';
 import 'package:sqljocky5/sqljocky.dart';
 import 'package:test/test.dart';
 
@@ -23,12 +22,12 @@ void main() async {
     test('connection test', () async {
       await conn.execute("DROP TABLE IF EXISTS t1");
       await conn.execute("CREATE TABLE IF NOT EXISTS t1 (a INT)");
-      var r = await conn.query("INSERT INTO `t1` (a) VALUES (?)", [1]);
+      var r = await conn.prepared("INSERT INTO `t1` (a) VALUES (?)", [1]);
 
-      r = await conn.query("SELECT * FROM `t1` WHERE a = ?", [1]);
+      r = await conn.prepared("SELECT * FROM `t1` WHERE a = ?", [1]);
       expect(r.length, 1);
 
-      r = await conn.query("SELECT * FROM `t1` WHERE a = ?", [2]);
+      r = await conn.prepared("SELECT * FROM `t1` WHERE a = ?", [2]);
       expect(r.length, 0);
 
       // Drop a table which doesn't exist. This should cause an error.
@@ -40,7 +39,7 @@ void main() async {
       }
 
       // Check the conn is still ok after the error
-      r = await conn.query("SELECT * FROM `t1` WHERE a = ?", [1]);
+      r = await conn.prepared("SELECT * FROM `t1` WHERE a = ?", [1]);
       expect(r.length, 1);
     });
 
@@ -51,9 +50,9 @@ void main() async {
       _ = conn.execute("CREATE TABLE IF NOT EXISTS t1 (a INT)");
       Future<Results> f1 = conn.execute("SELECT * FROM `t1`");
 
-      _ = conn.query("INSERT INTO `t1` (a) VALUES (?)", [1]);
+      _ = conn.prepared("INSERT INTO `t1` (a) VALUES (?)", [1]);
 
-      Future<Results> f2 = conn.query("SELECT * FROM `t1` WHERE a = ?", [1]);
+      Future<Results> f2 = conn.prepared("SELECT * FROM `t1` WHERE a = ?", [1]);
 
       Results r1 = await f1;
       Results r2 = await f2;

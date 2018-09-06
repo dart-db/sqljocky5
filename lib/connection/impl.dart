@@ -25,7 +25,7 @@ class MySqlConnectionImpl implements MySqlConnection {
   Future<StreamedResults> executeStreamed(String sql) =>
       _socket.execHandlerStreamed(QueryStreamHandler(sql), _timeout);
 
-  Future<Results> query(String sql, [Iterable values]) async {
+  Future<Results> prepared(String sql, [Iterable values]) async {
     PreparedQuery prepared;
     try {
       prepared = await _socket.execHandler(PrepareHandler(sql), _timeout);
@@ -40,7 +40,7 @@ class MySqlConnectionImpl implements MySqlConnection {
     }
   }
 
-  Future<StreamedResults> queryStreamed(String sql, Iterable values) async {
+  Future<StreamedResults> preparedStreamed(String sql, Iterable values) async {
     PreparedQuery prepared;
     try {
       prepared = await _socket.execHandler(new PrepareHandler(sql), _timeout);
@@ -55,7 +55,7 @@ class MySqlConnectionImpl implements MySqlConnection {
     }
   }
 
-  Future<List<Results>> queryMulti(
+  Future<List<Results>> preparedMulti(
       String sql, Iterable<Iterable> values) async {
     PreparedQuery prepared;
     var ret = List<Results>()..length = values.length;
@@ -76,17 +76,21 @@ class MySqlConnectionImpl implements MySqlConnection {
     }
   }
 
-  Future<void> transaction(
-      Future queryBlock(TransactionContext connection)) async {
-    await query("start transaction");
+  @override
+  Future<Prepared> prepare(String sql) => throw UnimplementedError();
+
+  Future<Transaction> begin() => Transaction.begin(this);
+
+  Future<void> transaction(Future<void> work(Transaction transaction)) async {
+    Transaction trans = await Transaction.begin(this);
     try {
-      await queryBlock(new TransactionContext(this));
+      await work(trans);
     } catch (e) {
-      await query("rollback");
+      await trans.rollback();
       if (e is! RollbackError) rethrow;
       return e;
     }
-    await query("commit");
+    await trans.commit();
   }
 
   /// Closes the connection
