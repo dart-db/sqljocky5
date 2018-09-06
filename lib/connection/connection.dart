@@ -67,4 +67,5 @@ class RollbackError {}
 abstract class Prepared {
   Future<StreamedResults> execute(Iterable values);
   Stream<StreamedResults> executeAll(Iterable<Iterable> values);
+  Future<void> deallocate();
 }

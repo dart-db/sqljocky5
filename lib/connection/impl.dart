@@ -63,9 +63,9 @@ class MySqlConnectionImpl implements MySqlConnection {
 
   @override
   Future<Prepared> prepare(String sql) async {
-    PreparedQuery prepared =
+    PreparedQuery query =
         await _socket.execHandler(PrepareHandler(sql), _timeout);
-    throw UnimplementedError();
+    return PreparedImpl._(this, query);
   }
 
   Future<Transaction> begin() => Transaction.begin(this);
@@ -89,7 +89,7 @@ class MySqlConnectionImpl implements MySqlConnection {
     if (_sentClose) return;
     _sentClose = true;
 
-    // TODO peacefully close the current handler!
+    // TODO gracefully close the current handler!
 
     try {
       await _socket.execHandlerNoResponse(QuitHandler(), _timeout);
@@ -127,18 +127,15 @@ class PreparedImpl implements Prepared {
       try {
         for (int i = 0; i < values.length; i++) {
           Iterable v = values.elementAt(i);
-          var handler = ExecuteQueryHandler(prepared, false, v);
-          controller.add(await _socket.execResultHandler(handler, _timeout));
+          controller.add(await _conn._executePrepared(_query, v));
         }
-      } catch (e) {
-        controller.addError(e);
-        if (prepared != null) {
-          _socket.execHandlerNoResponse(
-              CloseStatementHandler(prepared.statementHandlerId), _timeout);
-        }
-        rethrow;
+      } catch (e, st) {
+        controller.addError(e, st);
       }
     });
     return controller.stream;
   }
+
+  @override
+  Future<Function> deallocate() => throw UnimplementedError();
 }
