@@ -64,9 +64,7 @@ class Transaction implements Querier {
 /// Error throw in `MySqlConnection.transaction` to request a rollback
 class RollbackError {}
 
-class Prepared {
-  Future<StreamedResults> execute(Iterable values) =>
-      throw UnimplementedError();
-  Future<Results> executeAll(Iterable<Iterable> values) =>
-      throw UnimplementedError();
+abstract class Prepared {
+  Future<StreamedResults> execute(Iterable values);
+  Stream<StreamedResults> executeAll(Iterable<Iterable> values);
 }

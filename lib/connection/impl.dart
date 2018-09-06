@@ -62,7 +62,11 @@ class MySqlConnectionImpl implements MySqlConnection {
   }
 
   @override
-  Future<Prepared> prepare(String sql) => throw UnimplementedError();
+  Future<Prepared> prepare(String sql) async {
+    PreparedQuery prepared =
+        await _socket.execHandler(PrepareHandler(sql), _timeout);
+    throw UnimplementedError();
+  }
 
   Future<Transaction> begin() => Transaction.begin(this);
 
@@ -97,5 +101,44 @@ class MySqlConnectionImpl implements MySqlConnection {
   static Future<MySqlConnection> connect(ConnectionSettings c) async {
     var comm = await Comm.connect(c);
     return MySqlConnectionImpl(c.timeout, comm);
+  }
+
+  Future<StreamedResults> _executePrepared(
+      PreparedQuery query, Iterable values) {
+    var handler = ExecuteQueryHandler(query, false, values);
+    return _socket.execResultHandler(handler, _timeout);
+  }
+}
+
+class PreparedImpl implements Prepared {
+  final MySqlConnectionImpl _conn;
+  final PreparedQuery _query;
+
+  PreparedImpl._(this._conn, this._query);
+
+  @override
+  Future<StreamedResults> execute(Iterable values) =>
+      _conn._executePrepared(_query, values);
+
+  @override
+  Stream<StreamedResults> executeAll(Iterable<Iterable> values) {
+    var controller = StreamController<StreamedResults>();
+    Future.microtask(() async {
+      try {
+        for (int i = 0; i < values.length; i++) {
+          Iterable v = values.elementAt(i);
+          var handler = ExecuteQueryHandler(prepared, false, v);
+          controller.add(await _socket.execResultHandler(handler, _timeout));
+        }
+      } catch (e) {
+        controller.addError(e);
+        if (prepared != null) {
+          _socket.execHandlerNoResponse(
+              CloseStatementHandler(prepared.statementHandlerId), _timeout);
+        }
+        rethrow;
+      }
+    });
+    return controller.stream;
   }
 }
