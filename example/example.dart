@@ -1,6 +1,5 @@
-import 'package:sqljocky5/sqljocky.dart';
-import 'package:options_file/options_file.dart';
 import 'dart:async';
+import 'package:sqljocky5/sqljocky.dart';
 
 /// Drops the tables if they already exist
 Future<void> dropTables(MySqlConnection conn) async {
@@ -53,14 +52,12 @@ Future<void> readData(MySqlConnection conn) async {
 }
 
 main() async {
-  var options = OptionsFile('connection.options');
-
   var s = ConnectionSettings(
-    user: options.getString('user'),
-    password: options.getString('password', null),
-    port: options.getInt('port', 3306),
-    db: options.getString('db'),
-    host: options.getString('host', 'localhost'),
+    user: "root",
+    password: "dart_jaguar",
+    host: "localhost",
+    port: 3306,
+    db: "example",
   );
 
   // create a connection
