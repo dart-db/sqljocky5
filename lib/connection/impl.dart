@@ -137,5 +137,5 @@ class PreparedImpl implements Prepared {
   }
 
   @override
-  Future<Function> deallocate() => throw UnimplementedError();
+  Future<void> deallocate() => throw UnimplementedError();
 }

@@ -61,7 +61,8 @@ class Transaction implements Querier {
   }
 }
 
-/// Error throw in `MySqlConnection.transaction` to request a rollback
+/// Error that shall be throw in `MySqlConnection.transaction` to request a
+/// rollback
 class RollbackError {}
 
 abstract class Prepared {
