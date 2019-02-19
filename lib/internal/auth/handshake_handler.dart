@@ -2,12 +2,20 @@ library sqljocky.handshake_handler;
 
 import 'dart:math' as math;
 
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+
 import 'package:typed_buffer/typed_buffer.dart';
 import '../handlers/handler.dart';
 import 'package:sqljocky5/public/exceptions/client_error.dart';
 import 'package:sqljocky5/constants.dart';
 import 'ssl_handler.dart';
 import 'auth_handler.dart';
+
+abstract class AuthPluginNames {
+  static const mysqlNativePassword = "mysql_native_password";
+  static const cachingSha2Password = "caching_sha2_password";
+}
 
 class HandshakeHandler extends Handler {
   static const String MYSQL_NATIVE_PASSWORD = "mysql_native_password";
@@ -107,10 +115,17 @@ class HandshakeHandler extends Handler {
       throw MySqlClientError("Old Password Authentication is not supported");
     }
 
-    if ((serverCapabilities & CLIENT_PLUGIN_AUTH) != 0 &&
-        pluginName != MYSQL_NATIVE_PASSWORD) {
-      throw MySqlClientError(
-          "Authentication plugin not supported: $pluginName");
+    List<int> pwdHash = [];
+
+    if ((serverCapabilities & CLIENT_PLUGIN_AUTH) != 0) {
+      if (pluginName == AuthPluginNames.mysqlNativePassword) {
+        pwdHash = makeMysqlNativePassword(scrambleBuffer, _password);
+      } else if (pluginName == AuthPluginNames.cachingSha2Password) {
+        pwdHash = makeCachingSha2Password(scrambleBuffer, _password);
+      } else {
+        throw MySqlClientError(
+            "Authentication plugin not supported: $pluginName");
+      }
     }
 
     int clientFlags = CLIENT_PROTOCOL_41 |
@@ -139,9 +154,8 @@ class HandshakeHandler extends Handler {
               _characterSet,
               AuthHandler(
                 _user,
-                _password,
+                pwdHash,
                 _db,
-                scrambleBuffer,
                 clientFlags,
                 _maxPacketSize,
                 _characterSet,
@@ -149,7 +163,43 @@ class HandshakeHandler extends Handler {
     }
 
     return HandlerResponse(
-        nextHandler: AuthHandler(_user, _password, _db, scrambleBuffer,
-            clientFlags, _maxPacketSize, _characterSet));
+        nextHandler: AuthHandler(
+            _user, pwdHash, _db, clientFlags, _maxPacketSize, _characterSet));
   }
+}
+
+/// Hash password using 4.1+ method (SHA1)
+List<int> makeMysqlNativePassword(List<int> scrambler, String password) {
+  if (password == null) return [];
+
+  // SHA1(password)
+  final shaPwd = sha1.convert(utf8.encode(password)).bytes;
+  // SHA1(SHA1(password))
+  final shaShaPwd = sha1.convert(shaPwd).bytes;
+
+  final bytes = List<int>.from(scrambler)..addAll(shaShaPwd);
+
+  // SHA1(scramble, SHA1(SHA1(password)))
+  final List<int> hash = sha1.convert(bytes).bytes;
+
+  // XOR(SHA1(password), SHA1(scramble, SHA1(SHA1(password))))
+  for (int i = 0; i < hash.length; i++) hash[i] ^= shaPwd[i];
+  return hash;
+}
+
+/// Hash password using MySQL 8+ method (SHA256)
+/// XOR(SHA256(password), SHA256(SHA256(SHA256(password)), scramble))
+List<int> makeCachingSha2Password(List<int> scrambler, String password) {
+  if (password == null) return [];
+
+  // SHA256(password)
+  final List<int> shaPwd = sha256.convert(utf8.encode(password)).bytes;
+  // SHA256(SHA256(password))
+  final List<int> shaShaPwd = sha256.convert(shaPwd).bytes;
+  // SHA256(SHA256(SHA256(password)), scramble)
+  final List<int> res =
+      sha256.convert(List.from(shaShaPwd)..addAll(scrambler)).bytes;
+  // XOR(SHA256(password), SHA256(SHA256(SHA256(password)), scramble))
+  for (int i = 0; i < res.length; i++) res[i] ^= shaPwd[i];
+  return res;
 }

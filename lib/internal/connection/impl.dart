@@ -49,12 +49,14 @@ class MySqlConnectionImpl implements MySqlConnection {
           var handler = ExecuteQueryHandler(prepared, false, v);
           controller.add(await _socket.execResultHandler(handler, _timeout));
         }
+        await controller.close();
       } catch (e) {
         controller.addError(e);
         if (prepared != null) {
           _socket.execHandlerNoResponse(
               CloseStatementHandler(prepared.statementHandlerId), _timeout);
         }
+        await controller.close();
         rethrow;
       }
     });
