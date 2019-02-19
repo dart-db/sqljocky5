@@ -99,6 +99,10 @@ class MySqlConnectionImpl implements MySqlConnection {
     _socket.close();
   }
 
+  Future<void> get onDisconnect {
+    throw UnimplementedError("onDisconnect feature is not implemented!");
+  }
+
   static Future<MySqlConnection> connect(ConnectionSettings c) async {
     var comm = await Comm.connect(c);
     return MySqlConnectionImpl(c.timeout, comm);

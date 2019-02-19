@@ -105,7 +105,7 @@ class Comm {
       throw MySqlClientError(
           "Connection cannot process a request for $handler while a request is already in progress for $_handler");
     }
-    var myCompleter = Completer<dynamic>();
+    final myCompleter = Completer<dynamic>();
     _completer = myCompleter;
     _handler = handler;
 

@@ -46,6 +46,8 @@ abstract class MySqlConnection implements Querier {
   /// using [user] and [password] and connects to [db].
   static Future<MySqlConnection> connect(ConnectionSettings c) =>
       MySqlConnectionImpl.connect(c);
+
+  Future<void> get onDisconnect;
 }
 
 class Transaction implements Querier {

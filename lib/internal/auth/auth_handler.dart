@@ -16,17 +16,12 @@ class AuthHandler extends Handler {
   final int clientFlags;
   final int maxPacketSize;
   final int characterSet;
-//  final bool _ssl;
+  final bool _ssl;
 
-  AuthHandler(
-      String this.username,
-      String this.password,
-      String this.db,
-      List<int> this.scrambleBuffer,
-      int this.clientFlags,
-      int this.maxPacketSize,
-      int this.characterSet,
-      {bool ssl = false});
+  AuthHandler(this.username, this.password, this.db, this.scrambleBuffer,
+      this.clientFlags, this.maxPacketSize, this.characterSet,
+      {bool ssl = false})
+      : _ssl = ssl;
 
   List<int> getHash() {
     List<int> hash;
@@ -49,7 +44,7 @@ class AuthHandler extends Handler {
   }
 
   Uint8List createRequest() {
-    // calculate the mysql password hash
+    // Calculate the mysql password hash
     List<int> hash = getHash();
 
     List<int> encodedUsername = username == null ? [] : utf8.encode(username);

@@ -33,13 +33,13 @@ main() async {
   try {
     Results result = await tx
         .execute('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
-        'FROM people p '
-        'LEFT JOIN pets t ON t.owner_id = p.id')
+            'FROM people p '
+            'LEFT JOIN pets t ON t.owner_id = p.id')
         .deStream();
     print(result);
     print(result.map((r) => r.byName('name')));
     await tx.commit();
-  } catch(e) {
+  } catch (e) {
     print("Exception!");
   }
 
