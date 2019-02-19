@@ -1,6 +1,6 @@
 name: sqljocky5
 version: 2.2.1
-description: MySQL driver for Dart
+description: MySQL driver for Dart with support for prepared statements, transactions and connection pooling.
 documentation:
 homepage: https://github.com/dart-db/sqljocky5
 

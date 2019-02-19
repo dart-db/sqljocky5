@@ -71,7 +71,7 @@ public class SpeedTest {
 
     public static void main(String[] args) {
         try {
-            SpeedTest test = new SpeedTest();
+            SpeedTest test = SpeedTest();
             test.run();
         } catch (Exception e) {
             e.printStackTrace();

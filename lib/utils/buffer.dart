@@ -11,5 +11,5 @@ int measureLengthCodedBinary(int value) {
   if (value < (2 << 63)) {
     return 5;
   }
-  throw new ArgumentError('value is out of range');
+  throw ArgumentError('value is out of range');
 }
