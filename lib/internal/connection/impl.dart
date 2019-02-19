@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:sqljocky5/public/results/results.dart';
+import 'package:sqljocky5/public/results/future.dart';
 import 'package:sqljocky5/public/connection/connection.dart';
 
 import 'package:sqljocky5/internal/handlers/quit_handler.dart';
@@ -18,8 +19,8 @@ class MySqlConnectionImpl implements MySqlConnection {
 
   MySqlConnectionImpl(this._timeout, this._socket);
 
-  Future<StreamedResults> execute(String sql) =>
-      _socket.execResultHandler(QueryStreamHandler(sql), _timeout);
+  StreamedFuture execute(String sql) => StreamedFuture(
+      _socket.execResultHandler(QueryStreamHandler(sql), _timeout));
 
   Future<StreamedResults> prepared(String sql, Iterable values) async {
     PreparedQuery prepared;
@@ -36,12 +37,12 @@ class MySqlConnectionImpl implements MySqlConnection {
     }
   }
 
-  Future<Stream<StreamedResults>> preparedWithAll(
-      String sql, Iterable<Iterable> values) async {
+  Stream<StreamedResults> preparedWithAll(
+      String sql, Iterable<Iterable> values) {
     var controller = StreamController<StreamedResults>();
-    PreparedQuery prepared =
-        await _socket.execHandler(PrepareHandler(sql), _timeout);
-    Future.microtask(() async {
+
+    _socket.execHandler(PrepareHandler(sql), _timeout).then((r) async {
+      PreparedQuery prepared = r;
       try {
         for (int i = 0; i < values.length; i++) {
           Iterable v = values.elementAt(i);
@@ -57,6 +58,7 @@ class MySqlConnectionImpl implements MySqlConnection {
         rethrow;
       }
     });
+
     return controller.stream;
   }
 

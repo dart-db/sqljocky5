@@ -25,12 +25,23 @@ main() async {
   final conn = await MySqlConnection.connect(s);
   print("Opened connection!");
 
-  while (true) {
-    try {
-      await readData(conn);
-      await Future.delayed(Duration(seconds: 5));
-    } catch (e) {
-      print("Exception!");
-    }
+  final tx = await conn.begin();
+  print("Started transaction!");
+
+  await Future.delayed(Duration(seconds: 10));
+
+  try {
+    Results result = await tx
+        .execute('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
+        'FROM people p '
+        'LEFT JOIN pets t ON t.owner_id = p.id')
+        .deStream();
+    print(result);
+    print(result.map((r) => r.byName('name')));
+    await tx.commit();
+  } catch(e) {
+    print("Exception!");
   }
+
+  await conn.close();
 }

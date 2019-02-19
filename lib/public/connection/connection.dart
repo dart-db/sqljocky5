@@ -1,6 +1,7 @@
 library sqljocky.connection;
 
 import 'dart:async';
+import 'package:sqljocky5/public/results/future.dart';
 
 import '../results/results.dart';
 
@@ -16,11 +17,11 @@ export 'settings.dart';
 /// transaction.
 abstract class Querier {
   /// Executes the given [sql] statement and returns the result.
-  Future<StreamedResults> execute(String sql);
+  StreamedFuture execute(String sql);
 
   Future<StreamedResults> prepared(String sql, Iterable values);
 
-  Future<Stream<StreamedResults>> preparedWithAll(
+  Stream<StreamedResults> preparedWithAll(
       String sql, Iterable<Iterable> values);
 
   Future<Prepared> prepare(String sql);
@@ -51,12 +52,12 @@ class Transaction implements Querier {
   final MySqlConnection _conn;
   Transaction._(this._conn);
 
-  Future<StreamedResults> execute(String sql) => _conn.execute(sql);
+  StreamedFuture execute(String sql) => _conn.execute(sql);
 
   Future<StreamedResults> prepared(String sql, Iterable values) =>
       _conn.prepared(sql, values);
 
-  Future<Stream<StreamedResults>> preparedWithAll(
+  Stream<StreamedResults> preparedWithAll(
           String sql, Iterable<Iterable> values) =>
       _conn.preparedWithAll(sql, values);
 

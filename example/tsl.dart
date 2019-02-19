@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:sqljocky5/sqljocky.dart';
 
 Future<void> readData(MySqlConnection conn) async {
-  Results result = await (await conn
-          .execute('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
-              'FROM people p '
-              'LEFT JOIN pets t ON t.owner_id = p.id'))
+  Results result = await conn
+      .execute('SELECT p.id, p.name, p.age, t.name AS pet, t.species '
+          'FROM people p '
+          'LEFT JOIN pets t ON t.owner_id = p.id')
       .deStream();
   print(result);
   print(result.map((r) => r.byName('name')));

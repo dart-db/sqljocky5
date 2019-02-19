@@ -24,7 +24,7 @@ void main() async {
       Results ir = await conn
           .prepared("INSERT INTO `t1` (a) VALUES (?)", [5]).then(deStream);
       expect(ir.affectedRows, 1);
-      Results sr = await conn.execute("SELECT * FROM t1").then(deStream);
+      Results sr = await conn.execute("SELECT * FROM t1").deStream();
       expect(sr.length, 1);
       expect(sr.first.byName("a"), 5);
     });
