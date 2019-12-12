@@ -11,6 +11,19 @@ import 'package:sqljocky5/internal/prepared_statement_handler/prepare_handler.da
 import 'package:sqljocky5/internal/query_handler/query_stream_handler.dart';
 import 'package:sqljocky5/internal/comm/comm.dart';
 
+class PrepareResult {
+  final Comm _socket;
+  final Duration _timeout;
+  PreparedQuery query;
+  StreamedResults results;
+  PrepareResult(this._socket, this._timeout, this.query, results);
+
+  close() async {
+    await _socket.execHandlerNoResponse(
+        CloseStatementHandler(query.statementHandlerId), _timeout);
+  }
+}
+
 class MySqlConnectionImpl implements MySqlConnection {
   final Duration _timeout;
 
@@ -68,7 +81,7 @@ class MySqlConnectionImpl implements MySqlConnection {
   Future<Prepared> prepare(String sql) async {
     PreparedQuery query =
         await _socket.execHandler(PrepareHandler(sql), _timeout);
-    return PreparedImpl._(this, query);
+    return PreparedImpl._(_socket, _timeout, this, query);
   }
 
   Future<Transaction> begin() => Transaction.begin(this);
@@ -120,8 +133,10 @@ class MySqlConnectionImpl implements MySqlConnection {
 class PreparedImpl implements Prepared {
   final MySqlConnectionImpl _conn;
   final PreparedQuery _query;
+  final Comm _socket;
+  final Duration _timeout;
 
-  PreparedImpl._(this._conn, this._query);
+  PreparedImpl._(this._socket, this._timeout, this._conn, this._query);
 
   @override
   Future<StreamedResults> execute(Iterable values) =>
@@ -141,6 +156,12 @@ class PreparedImpl implements Prepared {
       }
     });
     return controller.stream;
+  }
+
+  @override
+  Future<void> close() async {
+    await _socket.execHandlerNoResponse(
+        CloseStatementHandler(_query.statementHandlerId), _timeout);
   }
 
   @override

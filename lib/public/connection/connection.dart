@@ -83,6 +83,8 @@ abstract class Prepared {
   /// Executes the statement multiple times with the given [values].
   Stream<StreamedResults> executeAll(Iterable<Iterable> values);
 
+  Future<void> close();
+
   /// Releases the prepared statement.
   Future<void> deallocate();
 }
