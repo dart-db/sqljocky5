@@ -11,19 +11,6 @@ import 'package:sqljocky5/internal/prepared_statement_handler/prepare_handler.da
 import 'package:sqljocky5/internal/query_handler/query_stream_handler.dart';
 import 'package:sqljocky5/internal/comm/comm.dart';
 
-class PrepareResult {
-  final Comm _socket;
-  final Duration _timeout;
-  PreparedQuery query;
-  StreamedResults results;
-  PrepareResult(this._socket, this._timeout, this.query, results);
-
-  close() async {
-    await _socket.execHandlerNoResponse(
-        CloseStatementHandler(query.statementHandlerId), _timeout);
-  }
-}
-
 class MySqlConnectionImpl implements MySqlConnection {
   final Duration _timeout;
 
