@@ -68,7 +68,7 @@ class MySqlConnectionImpl implements MySqlConnection {
   Future<Prepared> prepare(String sql) async {
     PreparedQuery query =
         await _socket.execHandler(PrepareHandler(sql), _timeout);
-    return PreparedImpl._(this, query);
+    return PreparedImpl._(_socket, _timeout, this, query);
   }
 
   Future<Transaction> begin() => Transaction.begin(this);
@@ -120,8 +120,10 @@ class MySqlConnectionImpl implements MySqlConnection {
 class PreparedImpl implements Prepared {
   final MySqlConnectionImpl _conn;
   final PreparedQuery _query;
+  final Comm _socket;
+  final Duration _timeout;
 
-  PreparedImpl._(this._conn, this._query);
+  PreparedImpl._(this._socket, this._timeout, this._conn, this._query);
 
   @override
   Future<StreamedResults> execute(Iterable values) =>
@@ -144,5 +146,8 @@ class PreparedImpl implements Prepared {
   }
 
   @override
-  Future<void> deallocate() => throw UnimplementedError();
+  Future<void> deallocate() async {
+    await _socket.execHandlerNoResponse(
+        CloseStatementHandler(_query.statementHandlerId), _timeout);
+  }
 }
