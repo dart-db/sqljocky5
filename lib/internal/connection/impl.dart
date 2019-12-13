@@ -146,11 +146,8 @@ class PreparedImpl implements Prepared {
   }
 
   @override
-  Future<void> close() async {
+  Future<void> deallocate() async {
     await _socket.execHandlerNoResponse(
         CloseStatementHandler(_query.statementHandlerId), _timeout);
   }
-
-  @override
-  Future<void> deallocate() => throw UnimplementedError();
 }
